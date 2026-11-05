@@ -1,0 +1,8 @@
+# Freddie Mac data must never be committed (their terms forbid redistribution)
+*.txt
+!requirements.txt
+*.zip
+*.parquet
+data/
+__pycache__/
+.ipynb_checkpoints/

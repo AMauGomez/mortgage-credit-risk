@@ -1,0 +1,8 @@
+duckdb==2.0.0
+pandas==2.3.3
+numpy==2.4.6
+scipy==1.17.1
+lifelines==0.30.3
+scikit-learn==1.9.1
+matplotlib==3.11.2
+pyarrow==26.0.1
