@@ -117,6 +117,7 @@ window.Quarto = {
   <li><a href="#importance-sampling-estimating-rare-events-precisely" id="toc-importance-sampling-estimating-rare-events-precisely" class="nav-link" data-scroll-target="#importance-sampling-estimating-rare-events-precisely">Importance sampling: estimating rare events precisely</a></li>
   <li><a href="#how-extreme-was-the-crisis" id="toc-how-extreme-was-the-crisis" class="nav-link" data-scroll-target="#how-extreme-was-the-crisis">How extreme was the crisis?</a></li>
   <li><a href="#which-correlation-do-the-data-imply" id="toc-which-correlation-do-the-data-imply" class="nav-link" data-scroll-target="#which-correlation-do-the-data-imply">Which correlation do the data imply?</a></li>
+  <li><a href="#how-sure-are-we-about-the-correlation-a-bayesian-answer-with-mcmc" id="toc-how-sure-are-we-about-the-correlation-a-bayesian-answer-with-mcmc" class="nav-link" data-scroll-target="#how-sure-are-we-about-the-correlation-a-bayesian-answer-with-mcmc">How sure are we about the correlation? A Bayesian answer with MCMC</a></li>
   </ul>
 </nav>
 </div>
@@ -148,7 +149,7 @@ window.Quarto = {
 <li>uses <strong>importance sampling</strong> to estimate tail probabilities precisely;</li>
 <li>asks how extreme the <strong>2006 vintage’s crisis years</strong> were under that model.</li>
 </ol>
-<div id="de9b2177" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:01.210022Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:01.210022Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:03.913609Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:03.913609Z&quot;}" data-execution_count="1">
+<div id="1fce6b7d" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:46:18.371330Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:46:18.371330Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:46:21.378506Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:46:21.377494Z&quot;}" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">"../src"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
@@ -182,7 +183,7 @@ window.Quarto = {
 <section id="calibration-on-the-2017-book" class="level2">
 <h2 class="anchored" data-anchor-id="calibration-on-the-2017-book">Calibration on the 2017 book</h2>
 <p>One-year probability of default by credit-score band, estimated as defaults per loan-year of exposure (the same “events over time observed” estimator used in the pedestrian-crash project), and exposure at default as the original balance:</p>
-<div id="13ecb732" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:03.918217Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:03.917137Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:03.965687Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:03.964681Z&quot;}" data-execution_count="2">
+<div id="173f6ef1" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:46:21.382522Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:46:21.381504Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:46:21.427657Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:46:21.427657Z&quot;}" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>book <span class="op">=</span> loans[loans[<span class="st">"vintage"</span>] <span class="op">==</span> <span class="dv">2017</span>]</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>calib <span class="op">=</span> book.groupby(<span class="st">"band"</span>, observed<span class="op">=</span><span class="va">True</span>).agg(loans<span class="op">=</span>(<span class="st">"loan_id"</span>, <span class="st">"size"</span>), ead<span class="op">=</span>(<span class="st">"upb"</span>, <span class="st">"sum"</span>),</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                                                defaults<span class="op">=</span>(<span class="st">"event"</span>, <span class="kw">lambda</span> s: (s <span class="op">==</span> <span class="dv">1</span>).<span class="bu">sum</span>()),</span>
@@ -256,7 +257,7 @@ window.Quarto = {
 <section id="monte-carlo-of-the-loss-distribution" class="level2">
 <h2 class="anchored" data-anchor-id="monte-carlo-of-the-loss-distribution">Monte Carlo of the loss distribution</h2>
 <p>For each simulated year: draw the economy <span class="math inline">\(Z\)</span>, compute each band’s conditional default probability, draw the number of defaults in each band (binomial, so borrower-level luck is included), and add up losses.</p>
-<div id="200b07a4" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:03.968242Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:03.968242Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:04.165636Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:04.164627Z&quot;}" data-execution_count="3">
+<div id="dba8ead5" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:46:21.431998Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:46:21.431998Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:46:21.634345Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:46:21.633263Z&quot;}" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>pd_b, n_b, ead_b <span class="op">=</span> calib[<span class="st">"pd_1y"</span>].values, calib[<span class="st">"loans"</span>].values, calib[<span class="st">"ead_per_loan"</span>].values</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>total_ead <span class="op">=</span> calib[<span class="st">"ead"</span>].<span class="bu">sum</span>()</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -324,7 +325,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Monte Carlo and the closed-form Basel formula agree closely. The formula assumes an infinitely large portfolio, and with almost 50,000 loans the borrower-level luck has averaged out. This is the kind of independent check a model validator runs: two methods, one answer.</p>
-<div id="ba549140" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:04.168652Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:04.167634Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:04.772751Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:04.771745Z&quot;}" data-execution_count="4">
+<div id="ea1b7a48" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:46:21.637433Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:46:21.637433Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:46:22.228301Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:46:22.227295Z&quot;}" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="fl">3.6</span>))</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ax.hist(loss <span class="op">*</span> <span class="dv">100</span>, bins<span class="op">=</span><span class="dv">200</span>, color<span class="op">=</span>GREY, density<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>ax.axvline(el <span class="op">*</span> <span class="dv">100</span>, color<span class="op">=</span>BLUE, label<span class="op">=</span><span class="ss">f"expected loss </span><span class="sc">{</span>el<span class="sc">:.2%}</span><span class="ss">"</span>)</span>
@@ -351,7 +352,7 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="importance-sampling-estimating-rare-events-precisely">Importance sampling: estimating rare events precisely</h2>
 <p>The probability that losses exceed the 99.9% level is 0.001 by construction. Estimated by plain Monte Carlo with 20,000 years, only about 20 simulated years land there, so the estimate is noisy. <strong>Importance sampling</strong> draws the economy from a distribution shifted towards bad years, <span class="math inline">\(Z \sim N(-\mu, 1)\)</span>, and corrects each draw with the likelihood ratio</p>
 <p><span class="math display">\[ w(z) = \frac{\varphi(z)}{\varphi(z + \mu)} = e^{\mu z + \mu^2 / 2}. \]</span></p>
-<div id="421d96ab" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:04.776269Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:04.775261Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:10.169580Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:10.168574Z&quot;}" data-execution_count="5">
+<div id="47fd9a97" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:46:22.231346Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:46:22.230860Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:46:27.568976Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:46:27.567922Z&quot;}" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>threshold, mu, n_small, reps <span class="op">=</span> asym, norm.ppf(<span class="fl">0.999</span>), <span class="dv">20_000</span>, <span class="dv">200</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plain():</span>
@@ -410,7 +411,7 @@ window.Quarto = {
 <section id="how-extreme-was-the-crisis" class="level2">
 <h2 class="anchored" data-anchor-id="how-extreme-was-the-crisis">How extreme was the crisis?</h2>
 <p>The 2006 vintage lived through the crisis. Its one-year default rate, calendar year by calendar year (defaults during the year over loans still at risk on January 1):</p>
-<div id="b9d4f4c2" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:10.171086Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:10.171086Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:15.621668Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:15.620658Z&quot;}" data-execution_count="6">
+<div id="4798873b" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:46:27.572597Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:46:27.571579Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:46:33.030004Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:46:33.028998Z&quot;}" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> yearly_default_rates(v, last_year<span class="op">=</span><span class="dv">2025</span>):</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    g <span class="op">=</span> loans[loans[<span class="st">"vintage"</span>] <span class="op">==</span> v]</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    fp <span class="op">=</span> pd.to_datetime(g[<span class="st">"first_payment_period"</span>].astype(<span class="bu">str</span>), <span class="bu">format</span><span class="op">=</span><span class="st">"%Y%m"</span>).dt.to_period(<span class="st">"M"</span>)</span>
@@ -501,7 +502,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Under the model calibrated on the 2017 book, the portfolio default rate in a year is <span class="math inline">\(\sum_b w_b\, p_b(Z)\)</span>. Solving for the economy <span class="math inline">\(Z\)</span> that produces the worst observed 2006 rate gives its quantile, i.e.&nbsp;how rare such a year is:</p>
-<div id="87a7ea81" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:15.623710Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:15.623710Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:15.653741Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:15.652734Z&quot;}" data-execution_count="7">
+<div id="08d897c2" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:46:33.032008Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:46:33.032008Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:46:33.062850Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:46:33.061377Z&quot;}" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>weights <span class="op">=</span> n_b <span class="op">/</span> n_b.<span class="bu">sum</span>()</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> portfolio_dr(zv, rho<span class="op">=</span>RHO):</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (conditional_pd(np.atleast_1d(zv), pd_b, rho) <span class="op">*</span> weights).<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>)</span>
@@ -578,7 +579,7 @@ window.Quarto = {
 <section id="which-correlation-do-the-data-imply" class="level2">
 <h2 class="anchored" data-anchor-id="which-correlation-do-the-data-imply">Which correlation do the data imply?</h2>
 <p>The yearly default rates themselves carry information about <span class="math inline">\(\rho\)</span>: if defaults were independent (<span class="math inline">\(\rho = 0\)</span>), every year would have nearly the same rate. Under the model, the yearly rate <span class="math inline">\(x\)</span> of a large book with probability of default <span class="math inline">\(PD\)</span> has the Vasicek density, and <span class="math inline">\(\rho\)</span> can be estimated by maximum likelihood from both vintages’ series (each with its own <span class="math inline">\(PD\)</span>):</p>
-<div id="544adb91" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:15.655739Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:15.654742Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:15.785922Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:15.784702Z&quot;}" data-execution_count="8">
+<div id="853fea02" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:46:33.065991Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:46:33.064939Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:46:33.193027Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:46:33.191512Z&quot;}" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> vasicek_loglik(x, pd_, rho):</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> norm.ppf(x)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (<span class="fl">0.5</span> <span class="op">*</span> np.log((<span class="dv">1</span> <span class="op">-</span> rho) <span class="op">/</span> rho) <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> a<span class="op">**</span><span class="dv">2</span></span>
@@ -643,11 +644,162 @@ window.Quarto = {
 </ul>
 <p>The lesson for validation: the correlation is meant to capture how far default rates swing around a <strong>through-the-cycle</strong> PD. A correlation estimated <em>after</em> fitting each period’s own PD hides part of the very risk capital is supposed to cover.</p>
 <p><em>Caveats a validator would raise:</em> the yearly rates come from <strong>aging</strong> books (a loan’s risk changes with its age), they are <strong>autocorrelated</strong> (bad years come in runs, while the model assumes independent years), and there are only 27 of them. The estimates are indicative, not a calibration.</p>
-<div id="8f618bcc" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:15.788714Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:15.787918Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:15.802128Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:15.801120Z&quot;}" data-execution_count="9">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>dr <span class="op">=</span> pd.concat({<span class="dv">2006</span>: dr06, <span class="dv">2017</span>: dr17}, names<span class="op">=</span>[<span class="st">"vintage"</span>])</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>dr.to_csv(<span class="st">"../results/yearly_default_rates.csv"</span>)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>tail.to_csv(<span class="st">"../results/crisis_tail_probability.csv"</span>)</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>calib.to_csv(<span class="st">"../results/simulation_calibration.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="how-sure-are-we-about-the-correlation-a-bayesian-answer-with-mcmc" class="level2">
+<h2 class="anchored" data-anchor-id="how-sure-are-we-about-the-correlation-a-bayesian-answer-with-mcmc">How sure are we about the correlation? A Bayesian answer with MCMC</h2>
+<p>Maximum likelihood gives one number for <span class="math inline">\(\rho\)</span> from only 27 yearly rates. A Bayesian analysis gives the whole <strong>posterior distribution</strong>, i.e.&nbsp;which values of <span class="math inline">\(\rho\)</span> are plausible given the data. There is no closed form for this posterior, so it is sampled with <strong>Markov chain Monte Carlo</strong>: a random-walk <strong>Metropolis–Hastings</strong> algorithm, written out below.</p>
+<ul>
+<li><strong>Parameters:</strong> <span class="math inline">\(\rho\)</span> and the two vintage PDs, sampled on unconstrained scales (<span class="math inline">\(\text{logit}\,\rho\)</span>, <span class="math inline">\(\Phi^{-1}(PD)\)</span>) so that every proposal is valid.</li>
+<li><strong>Priors:</strong> uniform on <span class="math inline">\((0, 1)\)</span> for <span class="math inline">\(\rho\)</span> and for each PD, i.e.&nbsp;no prior preference. On the transformed scale this adds the Jacobian terms <span class="math inline">\(\log\rho + \log(1-\rho)\)</span> and <span class="math inline">\(\log\varphi(\Phi^{-1}(PD))\)</span>.</li>
+<li><strong>Algorithm:</strong> propose <span class="math inline">\(\theta^* = \theta + \text{noise}\)</span>; accept with probability <span class="math inline">\(\min\{1,\ \pi(\theta^*)/\pi(\theta)\}\)</span>; otherwise stay.</li>
+<li><strong>Checks:</strong> four chains from different starting points, acceptance rate, the Gelman–Rubin <span class="math inline">\(\hat R\)</span> (≈1 when chains agree) and the effective sample size.</li>
+</ul>
+<div id="d6a90821" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:46:33.196131Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:46:33.196131Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:47:25.855144Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:47:25.854134Z&quot;}" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> log_posterior(theta):</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    eta, u06, u17 <span class="op">=</span> theta</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    rho <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>eta))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    pd06, pd17 <span class="op">=</span> norm.cdf(u06), norm.cdf(u17)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> (<span class="dv">0</span> <span class="op">&lt;</span> pd06 <span class="op">&lt;</span> <span class="dv">1</span> <span class="kw">and</span> <span class="dv">0</span> <span class="op">&lt;</span> pd17 <span class="op">&lt;</span> <span class="dv">1</span> <span class="kw">and</span> <span class="fl">1e-6</span> <span class="op">&lt;</span> rho <span class="op">&lt;</span> <span class="dv">1</span> <span class="op">-</span> <span class="fl">1e-6</span>):</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">-</span>np.inf</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    loglik <span class="op">=</span> vasicek_loglik(series[<span class="dv">2006</span>], pd06, rho) <span class="op">+</span> vasicek_loglik(series[<span class="dv">2017</span>], pd17, rho)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    log_jacobian <span class="op">=</span> np.log(rho) <span class="op">+</span> np.log(<span class="dv">1</span> <span class="op">-</span> rho) <span class="op">+</span> norm.logpdf(u06) <span class="op">+</span> norm.logpdf(u17)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> loglik <span class="op">+</span> log_jacobian</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> metropolis(start, n_iter<span class="op">=</span><span class="dv">20_000</span>, step<span class="op">=</span>(<span class="fl">0.45</span>, <span class="fl">0.12</span>, <span class="fl">0.12</span>), seed<span class="op">=</span><span class="dv">0</span>):</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> np.random.default_rng(seed)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    chain <span class="op">=</span> np.empty((n_iter, <span class="dv">3</span>))</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    theta, lp, accepted <span class="op">=</span> np.array(start, <span class="bu">float</span>), log_posterior(start), <span class="dv">0</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_iter):</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        proposal <span class="op">=</span> theta <span class="op">+</span> r.normal(<span class="dv">0</span>, step)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>        lp_new <span class="op">=</span> log_posterior(proposal)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> np.log(r.uniform()) <span class="op">&lt;</span> lp_new <span class="op">-</span> lp:          <span class="co"># Metropolis acceptance rule</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>            theta, lp, accepted <span class="op">=</span> proposal, lp_new, accepted <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>        chain[i] <span class="op">=</span> theta</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> chain, accepted <span class="op">/</span> n_iter</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>starts <span class="op">=</span> [(<span class="op">-</span><span class="fl">4.0</span>, <span class="op">-</span><span class="fl">2.5</span>, <span class="op">-</span><span class="fl">3.0</span>), (<span class="op">-</span><span class="fl">1.0</span>, <span class="op">-</span><span class="fl">1.5</span>, <span class="op">-</span><span class="fl">2.0</span>), (<span class="op">-</span><span class="fl">3.0</span>, <span class="op">-</span><span class="fl">2.0</span>, <span class="op">-</span><span class="fl">2.2</span>), (<span class="op">-</span><span class="fl">2.0</span>, <span class="op">-</span><span class="fl">1.8</span>, <span class="op">-</span><span class="fl">2.8</span>)]</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>runs <span class="op">=</span> [metropolis(s, seed<span class="op">=</span>k) <span class="cf">for</span> k, s <span class="kw">in</span> <span class="bu">enumerate</span>(starts)]</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>burn <span class="op">=</span> <span class="dv">5_000</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>chains <span class="op">=</span> np.stack([c[burn:] <span class="cf">for</span> c, _ <span class="kw">in</span> runs])                     <span class="co"># chains x draws x parameters</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>to_natural <span class="op">=</span> <span class="kw">lambda</span> a: np.stack([<span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>a[..., <span class="dv">0</span>])), norm.cdf(a[..., <span class="dv">1</span>]), norm.cdf(a[..., <span class="dv">2</span>])], axis<span class="op">=-</span><span class="dv">1</span>)</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>draws <span class="op">=</span> to_natural(chains)</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>names <span class="op">=</span> [<span class="st">"rho"</span>, <span class="st">"PD 2006 vintage"</span>, <span class="st">"PD 2017 vintage"</span>]</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> r_hat(x):              <span class="co"># Gelman-Rubin potential scale reduction, x: chains x draws</span></span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>    m, n <span class="op">=</span> x.shape</span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>    between <span class="op">=</span> n <span class="op">*</span> x.mean(axis<span class="op">=</span><span class="dv">1</span>).var(ddof<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    within <span class="op">=</span> x.var(axis<span class="op">=</span><span class="dv">1</span>, ddof<span class="op">=</span><span class="dv">1</span>).mean()</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.sqrt(((n <span class="op">-</span> <span class="dv">1</span>) <span class="op">/</span> n <span class="op">*</span> within <span class="op">+</span> between <span class="op">/</span> n) <span class="op">/</span> within)</span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ess(x):                <span class="co"># effective sample size from the pooled autocorrelation (initial positive sequence)</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    m, n <span class="op">=</span> x.shape</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>    xc <span class="op">=</span> x <span class="op">-</span> x.mean(axis<span class="op">=</span><span class="dv">1</span>, keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>    acf <span class="op">=</span> np.mean([np.correlate(c, c, <span class="st">"full"</span>)[n <span class="op">-</span> <span class="dv">1</span>:] <span class="op">/</span> (c <span class="op">@</span> c) <span class="cf">for</span> c <span class="kw">in</span> xc], axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, n):</span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> acf[k] <span class="op">&lt;</span> <span class="fl">0.05</span>:</span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>        s <span class="op">+=</span> acf[k]</span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> m <span class="op">*</span> n <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> s)</span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>posterior <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>    <span class="st">"posterior median"</span>: [np.median(draws[..., j]) <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)],</span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>    <span class="st">"95</span><span class="sc">% c</span><span class="st">redible interval"</span>: [<span class="ss">f"</span><span class="sc">{</span>np<span class="sc">.</span>quantile(draws[..., j], <span class="fl">0.025</span>)<span class="sc">:.4f}</span><span class="ss"> – </span><span class="sc">{</span>np<span class="sc">.</span>quantile(draws[..., j], <span class="fl">0.975</span>)<span class="sc">:.4f}</span><span class="ss">"</span> <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)],</span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a>    <span class="st">"MLE"</span>: [<span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>fit.x[<span class="dv">0</span>])), norm.cdf(fit.x[<span class="dv">1</span>]), norm.cdf(fit.x[<span class="dv">2</span>])],</span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>    <span class="st">"R-hat"</span>: [r_hat(draws[..., j]) <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)],</span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>    <span class="st">"effective draws"</span>: [ess(draws[..., j]) <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)],</span>
+<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>names)</span>
+<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"acceptance rates:"</span>, [<span class="bu">round</span>(a, <span class="dv">2</span>) <span class="cf">for</span> _, a <span class="kw">in</span> runs])</span>
+<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>posterior</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>acceptance rates: [0.19, 0.19, 0.19, 0.2]</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="9">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">posterior median</th>
+<th data-quarto-table-cell-role="th">95% credible interval</th>
+<th data-quarto-table-cell-role="th">MLE</th>
+<th data-quarto-table-cell-role="th">R-hat</th>
+<th data-quarto-table-cell-role="th">effective draws</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">rho</td>
+<td>0.0400</td>
+<td>0.0234 – 0.0746</td>
+<td>0.0329</td>
+<td>1.0002</td>
+<td>3514.3604</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">PD 2006 vintage</td>
+<td>0.0209</td>
+<td>0.0168 – 0.0267</td>
+<td>0.0203</td>
+<td>1.0001</td>
+<td>5836.3696</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">PD 2017 vintage</td>
+<td>0.0066</td>
+<td>0.0045 – 0.0102</td>
+<td>0.0062</td>
+<td>1.0002</td>
+<td>4082.0432</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="5e9c5116" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:47:25.856655Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:47:25.856655Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:47:26.522298Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:47:26.521290Z&quot;}" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">3.4</span>))</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(starts)):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">0</span>].plot(runs[k][<span class="dv">0</span>][:<span class="dv">6000</span>, <span class="dv">0</span>], lw<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axvline(burn, color<span class="op">=</span><span class="st">"black"</span>, ls<span class="op">=</span><span class="st">":"</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">"iteration"</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">"logit(rho)"</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Trace of four chains (dotted: end of burn-in)"</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>rho_draws <span class="op">=</span> draws[..., <span class="dv">0</span>].ravel()</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].hist(rho_draws, bins<span class="op">=</span><span class="dv">80</span>, color<span class="op">=</span>GREY, density<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axvline(<span class="fl">0.15</span>, color<span class="op">=</span>RED, label<span class="op">=</span><span class="st">"Basel value 0.15"</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axvline(np.median(rho_draws), color<span class="op">=</span>BLUE, label<span class="op">=</span><span class="st">"posterior median"</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xlabel(<span class="st">"rho"</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Posterior distribution of the correlation"</span>)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].legend(frameon<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"../figures/mcmc_rho.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>pd.Series({<span class="st">"P(rho &gt;= 0.15 | data)"</span>: (rho_draws <span class="op">&gt;=</span> <span class="fl">0.15</span>).mean(),</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>           <span class="st">"P(rho &gt;= 0.10 | data)"</span>: (rho_draws <span class="op">&gt;=</span> <span class="fl">0.10</span>).mean()})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="05_portfolio_loss_simulation_files/figure-html/cell-11-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="10">
+<pre><code>P(rho &gt;= 0.15 | data)    0.0000
+P(rho &gt;= 0.10 | data)    0.0023
+dtype: float64</code></pre>
+</div>
+</div>
+<p>The four chains, started from different points, reach the same region within the first few dozen iterations; the acceptance rate is about 20% (close to the 23% recommended for random-walk Metropolis in several dimensions), <span class="math inline">\(\hat R\)</span> is 1.000 and the effective number of independent draws is in the thousands, so the sample describes the posterior reliably. The posterior median is close to the maximum-likelihood estimate, as expected with flat priors, and the <strong>credible interval spans a factor of three</strong> (about 0.02 to 0.07): 27 yearly rates pin down the correlation only loosely. Even so, values as large as the regulatory 0.15 are very unlikely under this model and these data, which is the same message as before, now with its uncertainty quantified: the data-driven correlation is low <em>when each vintage gets its own PD</em>, and the Basel value builds in a margin beyond what this short history shows.</p>
+<div id="eda7cd2c" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:47:26.524305Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:47:26.524305Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:47:26.536479Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:47:26.535945Z&quot;}" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>dr <span class="op">=</span> pd.concat({<span class="dv">2006</span>: dr06, <span class="dv">2017</span>: dr17}, names<span class="op">=</span>[<span class="st">"vintage"</span>])</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>dr.to_csv(<span class="st">"../results/yearly_default_rates.csv"</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>tail.to_csv(<span class="st">"../results/crisis_tail_probability.csv"</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>calib.to_csv(<span class="st">"../results/simulation_calibration.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 

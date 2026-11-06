@@ -130,6 +130,7 @@ ul.task-list li input[type="checkbox"] {
 <ul>
 <li>Monte Carlo and the closed-form Basel formula give the same 99.9% loss (1.71% vs 1.75% of the book).</li>
 <li><strong>Importance sampling</strong> estimates the 1-in-1,000 tail with about 290 times less variance than plain Monte Carlo.</li>
+<li><strong>MCMC (Metropolis–Hastings, written from scratch)</strong> gives the posterior of the default correlation: median 0.04, 95% credible interval 0.02–0.07, four chains with R-hat = 1.000.</li>
 <li>The worst crisis year of the 2006 vintage (2010, 4.4% of loans defaulting) corresponds, with the Basel correlation of 0.15, to roughly a once-in-200-years economy; the 99.9% level would have covered it.</li>
 </ul>
 <p><img src="figures/loss_distribution.png" class="img-fluid"></p>
@@ -168,7 +169,7 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td>5</td>
 <td><a href="notebooks/05_portfolio_loss_simulation.html">Portfolio loss simulation</a></td>
-<td>Vasicek Monte Carlo, Basel check, importance sampling, crisis tail probability, correlation by maximum likelihood</td>
+<td>Vasicek Monte Carlo, Basel check, importance sampling, crisis tail probability, correlation by maximum likelihood and by MCMC</td>
 </tr>
 </tbody>
 </table>
@@ -176,7 +177,7 @@ ul.task-list li input[type="checkbox"] {
 <section id="data" class="level2">
 <h2 class="anchored" data-anchor-id="data">Data</h2>
 <p>The data are <strong>not included</strong> in the repository: Freddie Mac’s terms allow publishing research results but not the dataset or extracts of it. Everything shown is aggregated; no individual loan appears. Instructions to reproduce are in the <a href="https://github.com/AMauGomez/mortgage-credit-risk#data-and-reproducibility">README</a>. Freddie Mac provides the dataset “as is” and does not endorse this analysis.</p>
-<p><strong>Skills shown:</strong> survival analysis with competing risks · Cox proportional hazards and residual diagnostics · out-of-time model validation · PCA and clustering · Monte Carlo simulation and importance sampling · Vasicek / Basel IRB capital · maximum likelihood · SQL (DuckDB) · Python</p>
+<p><strong>Skills shown:</strong> survival analysis with competing risks · Cox proportional hazards and residual diagnostics · out-of-time model validation · PCA and clustering · Monte Carlo simulation, importance sampling and MCMC · Vasicek / Basel IRB capital · maximum likelihood · SQL (DuckDB) · Python</p>
 <hr>
 <p>Code: MIT License. Aaron Mauricio Gómez Jiménez · <a href="https://www.linkedin.com/in/amaugomezjimenez">LinkedIn</a> · <a href="https://orcid.org/0009-0003-1099-0431">ORCID</a></p>
 </section>

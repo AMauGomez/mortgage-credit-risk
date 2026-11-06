@@ -44,6 +44,7 @@ A one-factor (Vasicek) model of correlated defaults, calibrated on the 2017 book
 
 - Monte Carlo and the closed-form Basel formula give the same 99.9% loss (1.71% vs 1.75% of the book).
 - **Importance sampling** estimates the 1-in-1,000 tail probability with **~290 times less variance** than plain Monte Carlo for the same number of simulations.
+- **MCMC (Metropolis–Hastings, written from scratch):** the posterior of the default correlation from 27 yearly default rates has median 0.04 (95% credible interval 0.02–0.07), with four chains, R-hat = 1.000 and thousands of effective draws.
 - The worst crisis year of the 2006 vintage (2010: 4.4% of loans defaulted) corresponds, with the Basel correlation of 0.15, to roughly a once-in-200-years economy; the 99.9% capital level (6.7%) would have covered it. The conclusion is sensitive to the correlation, and a correlation estimated from the data depends on whether the crisis is treated as part of the cycle or absorbed into each period's PD.
 
 ![Loss distribution](figures/loss_distribution.png)
@@ -56,7 +57,7 @@ A one-factor (Vasicek) model of correlated defaults, calibrated on the 2017 book
 | 2 | [Survival with competing risks](notebooks/02_survival_competing_risks.ipynb) | Aalen-Johansen vs Kaplan-Meier, default and prepayment curves, default by credit score |
 | 3 | [Cox model](notebooks/03_cox_model.ipynb) | Hazard ratios, proportional-hazards test, residual diagnostics, effects by loan age, out-of-time validation |
 | 4 | [Segmentation](notebooks/04_segmentation.ipynb) | PCA, k-means, composition vs environment decomposition |
-| 5 | [Portfolio loss simulation](notebooks/05_portfolio_loss_simulation.ipynb) | Vasicek Monte Carlo, Basel check, importance sampling, crisis tail probability, correlation by maximum likelihood |
+| 5 | [Portfolio loss simulation](notebooks/05_portfolio_loss_simulation.ipynb) | Vasicek Monte Carlo, Basel check, importance sampling, crisis tail probability, correlation by maximum likelihood and by MCMC |
 
 Code: [`src/credit_risk/data.py`](src/credit_risk/data.py) builds one row per loan with SQL run by DuckDB directly on the raw files; [`src/credit_risk/survival.py`](src/credit_risk/survival.py) implements the discrete-time competing-risks estimator (checked against `lifelines`).
 
@@ -72,7 +73,7 @@ The data are **not included**: Freddie Mac's terms allow publishing research res
 
 ## Skills shown
 
-Survival analysis with competing risks · Cox proportional hazards and residual diagnostics · out-of-time model validation (discrimination vs calibration) · PCA and clustering · Monte Carlo simulation and importance sampling · Vasicek / Basel IRB capital · maximum likelihood · SQL (DuckDB) · Python
+Survival analysis with competing risks · Cox proportional hazards and residual diagnostics · out-of-time model validation (discrimination vs calibration) · PCA and clustering · Monte Carlo simulation, importance sampling and MCMC · Vasicek / Basel IRB capital · maximum likelihood · SQL (DuckDB) · Python
 
 ---
 
