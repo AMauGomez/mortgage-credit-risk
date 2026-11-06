@@ -2,7 +2,7 @@
 
 **Credit-risk modelling on 100,000 US mortgages followed for up to 20 years: competing-risks survival, a Cox model validated out of time, borrower segmentation, and a Monte Carlo of portfolio losses checked against the Basel capital formula.**
 
-Python (pandas, lifelines, scikit-learn, SciPy) · SQL (DuckDB) · Data: [Freddie Mac Single-Family Loan-Level Dataset](https://freddiemac.com/research/datasets/sf-loanlevel-dataset)
+📊 [Full report](https://amaugomez.github.io/mortgage-credit-risk/) · Python (pandas, lifelines, scikit-learn, SciPy) · SQL (DuckDB) · Data: [Freddie Mac Single-Family Loan-Level Dataset](https://freddiemac.com/research/datasets/sf-loanlevel-dataset)
 
 ---
 
@@ -36,7 +36,7 @@ A Cox model fitted on the 2006 vintage ranks 2017 borrowers almost as well as a 
 
 ![Out-of-time calibration](figures/out_of_time_calibration.png)
 
-The proportional-hazards checks are findings, not nuisances: the extra risk of a 2006 loan peaked in months 25–48 of its life (2008–2010), and the predictive power of the origination credit score fades as loans age.
+The proportional-hazards checks are findings, not nuisances: the extra risk of a 2006 loan peaked in months 25–48 of its life (2008–2010), and the predictive power of origination information fades as loans age. Residual diagnostics (scaled Schoenfeld, martingale, Cox-Snell, deviance) show where the model falls short: the credit score acts non-linearly, and a constant vintage effect overstates the accumulated risk of long-lived 2006 loans.
 
 ## Portfolio losses and capital
 
@@ -54,7 +54,7 @@ A one-factor (Vasicek) model of correlated defaults, calibrated on the 2017 book
 |---|---|---|
 | 1 | [Data and the definition of default](notebooks/01_data_and_default_definition.ipynb) | SQL pipeline, outcomes, the forbearance trap, loss given default |
 | 2 | [Survival with competing risks](notebooks/02_survival_competing_risks.ipynb) | Aalen-Johansen vs Kaplan-Meier, default and prepayment curves, default by credit score |
-| 3 | [Cox model](notebooks/03_cox_model.ipynb) | Hazard ratios, proportional-hazards diagnostics, effects by loan age, out-of-time validation |
+| 3 | [Cox model](notebooks/03_cox_model.ipynb) | Hazard ratios, proportional-hazards test, residual diagnostics, effects by loan age, out-of-time validation |
 | 4 | [Segmentation](notebooks/04_segmentation.ipynb) | PCA, k-means, composition vs environment decomposition |
 | 5 | [Portfolio loss simulation](notebooks/05_portfolio_loss_simulation.ipynb) | Vasicek Monte Carlo, Basel check, importance sampling, crisis tail probability, correlation by maximum likelihood |
 
@@ -72,7 +72,7 @@ The data are **not included**: Freddie Mac's terms allow publishing research res
 
 ## Skills shown
 
-Survival analysis with competing risks · Cox proportional hazards and diagnostics · out-of-time model validation (discrimination vs calibration) · PCA and clustering · Monte Carlo simulation and importance sampling · Vasicek / Basel IRB capital · maximum likelihood · SQL (DuckDB) · Python
+Survival analysis with competing risks · Cox proportional hazards and residual diagnostics · out-of-time model validation (discrimination vs calibration) · PCA and clustering · Monte Carlo simulation and importance sampling · Vasicek / Basel IRB capital · maximum likelihood · SQL (DuckDB) · Python
 
 ---
 

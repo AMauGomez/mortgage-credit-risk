@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.55">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>5. Simulating portfolio losses: would bank capital have covered 2009?</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="05_portfolio_loss_simulation_files/libs/clipboard/clipboard.min.js"></script>
+<script src="05_portfolio_loss_simulation_files/libs/quarto-html/quarto.js"></script>
+<script src="05_portfolio_loss_simulation_files/libs/quarto-html/popper.min.js"></script>
+<script src="05_portfolio_loss_simulation_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="05_portfolio_loss_simulation_files/libs/quarto-html/anchor.min.js"></script>
+<link href="05_portfolio_loss_simulation_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="05_portfolio_loss_simulation_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="05_portfolio_loss_simulation_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="05_portfolio_loss_simulation_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="05_portfolio_loss_simulation_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#the-model" id="toc-the-model" class="nav-link active" data-scroll-target="#the-model">The model</a></li>
+  <li><a href="#calibration-on-the-2017-book" id="toc-calibration-on-the-2017-book" class="nav-link" data-scroll-target="#calibration-on-the-2017-book">Calibration on the 2017 book</a></li>
+  <li><a href="#monte-carlo-of-the-loss-distribution" id="toc-monte-carlo-of-the-loss-distribution" class="nav-link" data-scroll-target="#monte-carlo-of-the-loss-distribution">Monte Carlo of the loss distribution</a></li>
+  <li><a href="#importance-sampling-estimating-rare-events-precisely" id="toc-importance-sampling-estimating-rare-events-precisely" class="nav-link" data-scroll-target="#importance-sampling-estimating-rare-events-precisely">Importance sampling: estimating rare events precisely</a></li>
+  <li><a href="#how-extreme-was-the-crisis" id="toc-how-extreme-was-the-crisis" class="nav-link" data-scroll-target="#how-extreme-was-the-crisis">How extreme was the crisis?</a></li>
+  <li><a href="#which-correlation-do-the-data-imply" id="toc-which-correlation-do-the-data-imply" class="nav-link" data-scroll-target="#which-correlation-do-the-data-imply">Which correlation do the data imply?</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">5. Simulating portfolio losses: would bank capital have covered 2009?</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Notebooks 2–4 describe <em>individual</em> loans. A bank needs the distribution of losses of the <strong>whole portfolio</strong>, because defaults are not independent: when the economy turns, many borrowers default together. Regulatory capital for mortgages (Basel IRB) comes from a one-factor model of that dependence. This notebook:</p>
+<ol type="1">
+<li>calibrates the model on the <strong>2017</strong> book (a normal period);</li>
+<li>simulates its loss distribution by Monte Carlo and checks it against the closed-form Basel formula;</li>
+<li>uses <strong>importance sampling</strong> to estimate tail probabilities precisely;</li>
+<li>asks how extreme the <strong>2006 vintage’s crisis years</strong> were under that model.</li>
+</ol>
+<div id="de9b2177" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:01.210022Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:01.210022Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:03.913609Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:03.913609Z&quot;}" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">"../src"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.optimize <span class="im">import</span> minimize</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> norm</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> credit_risk.data <span class="im">import</span> load_loans</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>pd.set_option(<span class="st">"display.precision"</span>, <span class="dv">4</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>BLUE, RED, GREY <span class="op">=</span> <span class="st">"#1a73e8"</span>, <span class="st">"#d93025"</span>, <span class="st">"#80868b"</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">2026</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>loans <span class="op">=</span> load_loans((<span class="dv">2006</span>, <span class="dv">2017</span>)).dropna(subset<span class="op">=</span>[<span class="st">"fico"</span>])</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>loans[<span class="st">"band"</span>] <span class="op">=</span> pd.cut(loans[<span class="st">"fico"</span>], [<span class="dv">300</span>, <span class="dv">660</span>, <span class="dv">720</span>, <span class="dv">760</span>, <span class="dv">851</span>], right<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                       labels<span class="op">=</span>[<span class="st">"&lt; 660"</span>, <span class="st">"660–719"</span>, <span class="st">"720–759"</span>, <span class="st">"760+"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="the-model" class="level2">
+<h2 class="anchored" data-anchor-id="the-model">The model</h2>
+<p>Each loan <em>i</em> defaults within a year if a latent variable falls below a threshold:</p>
+<p><span class="math display">\[ X_i = \sqrt{\rho}\, Z + \sqrt{1-\rho}\, \varepsilon_i, \qquad \text{default if } X_i &lt; \Phi^{-1}(PD_i), \]</span></p>
+<p>where <span class="math inline">\(Z \sim N(0,1)\)</span> is the <strong>economy</strong>, shared by all loans, and <span class="math inline">\(\varepsilon_i\)</span> is the borrower’s own luck. Given the economy, defaults are independent with probability</p>
+<p><span class="math display">\[ p_i(Z) = \Phi\!\left(\frac{\Phi^{-1}(PD_i) - \sqrt{\rho}\, Z}{\sqrt{1-\rho}}\right). \]</span></p>
+<p>A bad year is a low <span class="math inline">\(Z\)</span>. The correlation <span class="math inline">\(\rho\)</span> measures how much the economy drives defaults; Basel fixes <span class="math inline">\(\rho = 0.15\)</span> for residential mortgages.</p>
+</section>
+<section id="calibration-on-the-2017-book" class="level2">
+<h2 class="anchored" data-anchor-id="calibration-on-the-2017-book">Calibration on the 2017 book</h2>
+<p>One-year probability of default by credit-score band, estimated as defaults per loan-year of exposure (the same “events over time observed” estimator used in the pedestrian-crash project), and exposure at default as the original balance:</p>
+<div id="13ecb732" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:03.918217Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:03.917137Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:03.965687Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:03.964681Z&quot;}" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>book <span class="op">=</span> loans[loans[<span class="st">"vintage"</span>] <span class="op">==</span> <span class="dv">2017</span>]</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>calib <span class="op">=</span> book.groupby(<span class="st">"band"</span>, observed<span class="op">=</span><span class="va">True</span>).agg(loans<span class="op">=</span>(<span class="st">"loan_id"</span>, <span class="st">"size"</span>), ead<span class="op">=</span>(<span class="st">"upb"</span>, <span class="st">"sum"</span>),</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                                                defaults<span class="op">=</span>(<span class="st">"event"</span>, <span class="kw">lambda</span> s: (s <span class="op">==</span> <span class="dv">1</span>).<span class="bu">sum</span>()),</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                                                loan_years<span class="op">=</span>(<span class="st">"time"</span>, <span class="kw">lambda</span> s: s.<span class="bu">sum</span>() <span class="op">/</span> <span class="dv">12</span>))</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>calib[<span class="st">"pd_1y"</span>] <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> np.exp(<span class="op">-</span>calib[<span class="st">"defaults"</span>] <span class="op">/</span> calib[<span class="st">"loan_years"</span>])</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>calib[<span class="st">"ead_per_loan"</span>] <span class="op">=</span> calib[<span class="st">"ead"</span>] <span class="op">/</span> calib[<span class="st">"loans"</span>]</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Loss given default: the 2006 crisis value per defaulted dollar (notebook 1), as Basel asks for a</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># "downturn" LGD. Normal-times LGD in 2017 was below 1%, which would make capital meaningless.</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>d06 <span class="op">=</span> loans[(loans[<span class="st">"vintage"</span>] <span class="op">==</span> <span class="dv">2006</span>) <span class="op">&amp;</span> (loans[<span class="st">"event"</span>] <span class="op">==</span> <span class="dv">1</span>)]</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>LGD <span class="op">=</span> d06[<span class="st">"actual_loss"</span>].where(d06[<span class="st">"zbc"</span>].isin([<span class="st">"02"</span>, <span class="st">"03"</span>, <span class="st">"09"</span>]), <span class="dv">0</span>).fillna(<span class="dv">0</span>).<span class="bu">sum</span>() <span class="op">/</span> d06[<span class="st">"upb_default"</span>].<span class="bu">sum</span>()</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>RHO <span class="op">=</span> <span class="fl">0.15</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>calib[[<span class="st">"loans"</span>, <span class="st">"pd_1y"</span>, <span class="st">"ead_per_loan"</span>]].assign(LGD<span class="op">=</span>LGD)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="2">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">loans</th>
+<th data-quarto-table-cell-role="th">pd_1y</th>
+<th data-quarto-table-cell-role="th">ead_per_loan</th>
+<th data-quarto-table-cell-role="th">LGD</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">band</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">&lt; 660</td>
+<td>2537</td>
+<td>0.0192</td>
+<td>193152.5424</td>
+<td>0.2657</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">660–719</td>
+<td>12384</td>
+<td>0.0096</td>
+<td>225439.8417</td>
+<td>0.2657</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">720–759</td>
+<td>12794</td>
+<td>0.0046</td>
+<td>237048.1476</td>
+<td>0.2657</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">760+</td>
+<td>22277</td>
+<td>0.0021</td>
+<td>232908.6951</td>
+<td>0.2657</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="monte-carlo-of-the-loss-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="monte-carlo-of-the-loss-distribution">Monte Carlo of the loss distribution</h2>
+<p>For each simulated year: draw the economy <span class="math inline">\(Z\)</span>, compute each band’s conditional default probability, draw the number of defaults in each band (binomial, so borrower-level luck is included), and add up losses.</p>
+<div id="200b07a4" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:03.968242Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:03.968242Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:04.165636Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:04.164627Z&quot;}" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>pd_b, n_b, ead_b <span class="op">=</span> calib[<span class="st">"pd_1y"</span>].values, calib[<span class="st">"loans"</span>].values, calib[<span class="st">"ead_per_loan"</span>].values</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>total_ead <span class="op">=</span> calib[<span class="st">"ead"</span>].<span class="bu">sum</span>()</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> conditional_pd(z, pd_, rho<span class="op">=</span>RHO):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> norm.cdf((norm.ppf(pd_) <span class="op">-</span> np.sqrt(rho) <span class="op">*</span> z[:, <span class="va">None</span>]) <span class="op">/</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> rho))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> simulate_losses(z, rho<span class="op">=</span>RHO):</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> conditional_pd(z, pd_b, rho)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    defaults <span class="op">=</span> rng.binomial(n_b, p)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (defaults <span class="op">*</span> ead_b <span class="op">*</span> LGD).<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>) <span class="op">/</span> total_ead     <span class="co"># loss as a share of the book</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">200_000</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> rng.standard_normal(N)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>loss <span class="op">=</span> simulate_losses(z)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>el <span class="op">=</span> loss.mean()</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>var999 <span class="op">=</span> np.quantile(loss, <span class="fl">0.999</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>es999 <span class="op">=</span> loss[loss <span class="op">&gt;=</span> var999].mean()</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Closed form (Basel / Vasicek asymptotic portfolio): loss at the 99.9% quantile of the economy</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>asym <span class="op">=</span> (ead_b <span class="op">*</span> n_b <span class="op">*</span> LGD <span class="op">*</span> norm.cdf((norm.ppf(pd_b) <span class="op">+</span> np.sqrt(RHO) <span class="op">*</span> norm.ppf(<span class="fl">0.999</span>)) <span class="op">/</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> RHO))).<span class="bu">sum</span>() <span class="op">/</span> total_ead</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>expected_closed <span class="op">=</span> (ead_b <span class="op">*</span> n_b <span class="op">*</span> LGD <span class="op">*</span> pd_b).<span class="bu">sum</span>() <span class="op">/</span> total_ead</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>pd.DataFrame({</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Monte Carlo"</span>: [el, var999, es999, var999 <span class="op">-</span> el],</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">"closed form (Basel)"</span>: [expected_closed, asym, np.nan, asym <span class="op">-</span> expected_closed],</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>[<span class="st">"expected loss"</span>, <span class="st">"99.9</span><span class="sc">% lo</span><span class="st">ss (VaR)"</span>, <span class="st">"expected shortfall 99.9%"</span>, <span class="st">"capital = VaR − expected loss"</span>]).<span class="bu">map</span>(<span class="kw">lambda</span> x: <span class="ss">f"</span><span class="sc">{</span>x<span class="sc">:.3%}</span><span class="ss">"</span> <span class="cf">if</span> pd.notna(x) <span class="cf">else</span> <span class="st">""</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Monte Carlo</th>
+<th data-quarto-table-cell-role="th">closed form (Basel)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">expected loss</td>
+<td>0.140%</td>
+<td>0.141%</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">99.9% loss (VaR)</td>
+<td>1.708%</td>
+<td>1.750%</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">expected shortfall 99.9%</td>
+<td>2.164%</td>
+<td></td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">capital = VaR − expected loss</td>
+<td>1.567%</td>
+<td>1.609%</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Monte Carlo and the closed-form Basel formula agree closely. The formula assumes an infinitely large portfolio, and with almost 50,000 loans the borrower-level luck has averaged out. This is the kind of independent check a model validator runs: two methods, one answer.</p>
+<div id="ba549140" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:04.168652Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:04.167634Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:04.772751Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:04.771745Z&quot;}" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="fl">3.6</span>))</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ax.hist(loss <span class="op">*</span> <span class="dv">100</span>, bins<span class="op">=</span><span class="dv">200</span>, color<span class="op">=</span>GREY, density<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>ax.axvline(el <span class="op">*</span> <span class="dv">100</span>, color<span class="op">=</span>BLUE, label<span class="op">=</span><span class="ss">f"expected loss </span><span class="sc">{</span>el<span class="sc">:.2%}</span><span class="ss">"</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>ax.axvline(var999 <span class="op">*</span> <span class="dv">100</span>, color<span class="op">=</span>RED, label<span class="op">=</span><span class="ss">f"99.9% loss </span><span class="sc">{</span>var999<span class="sc">:.2%}</span><span class="ss">"</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"annual loss, </span><span class="sc">% o</span><span class="st">f the book"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"density"</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="dv">0</span>, np.quantile(loss, <span class="fl">0.9995</span>) <span class="op">*</span> <span class="dv">100</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>ax.legend(frameon<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Simulated one-year loss distribution, 2017 mortgage book"</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"../figures/loss_distribution.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="05_portfolio_loss_simulation_files/figure-html/cell-5-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Most years lose very little; a few lose many times the average. That long right tail is why capital is set at a quantile, not at the mean.</p>
+</section>
+<section id="importance-sampling-estimating-rare-events-precisely" class="level2">
+<h2 class="anchored" data-anchor-id="importance-sampling-estimating-rare-events-precisely">Importance sampling: estimating rare events precisely</h2>
+<p>The probability that losses exceed the 99.9% level is 0.001 by construction. Estimated by plain Monte Carlo with 20,000 years, only about 20 simulated years land there, so the estimate is noisy. <strong>Importance sampling</strong> draws the economy from a distribution shifted towards bad years, <span class="math inline">\(Z \sim N(-\mu, 1)\)</span>, and corrects each draw with the likelihood ratio</p>
+<p><span class="math display">\[ w(z) = \frac{\varphi(z)}{\varphi(z + \mu)} = e^{\mu z + \mu^2 / 2}. \]</span></p>
+<div id="421d96ab" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:04.776269Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:04.775261Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:10.169580Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:10.168574Z&quot;}" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>threshold, mu, n_small, reps <span class="op">=</span> asym, norm.ppf(<span class="fl">0.999</span>), <span class="dv">20_000</span>, <span class="dv">200</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plain():</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (simulate_losses(rng.standard_normal(n_small)) <span class="op">&gt;</span> threshold).mean()</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> importance():</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    zz <span class="op">=</span> rng.standard_normal(n_small) <span class="op">-</span> mu</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    w <span class="op">=</span> np.exp(mu <span class="op">*</span> zz <span class="op">+</span> mu<span class="op">**</span><span class="dv">2</span> <span class="op">/</span> <span class="dv">2</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ((simulate_losses(zz) <span class="op">&gt;</span> threshold) <span class="op">*</span> w).mean()</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>est_plain <span class="op">=</span> np.array([plain() <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(reps)])</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>est_is <span class="op">=</span> np.array([importance() <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(reps)])</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>pd.DataFrame({</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"mean estimate"</span>: [est_plain.mean(), est_is.mean()],</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"standard error (sd over 200 runs)"</span>: [est_plain.std(), est_is.std()],</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"relative error"</span>: [est_plain.std() <span class="op">/</span> est_plain.mean(), est_is.std() <span class="op">/</span> est_is.mean()],</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>[<span class="st">"plain Monte Carlo"</span>, <span class="st">"importance sampling"</span>]).assign(</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    variance_reduction<span class="op">=</span><span class="kw">lambda</span> d: (d[<span class="st">"standard error (sd over 200 runs)"</span>].iloc[<span class="dv">0</span>] <span class="op">/</span> d[<span class="st">"standard error (sd over 200 runs)"</span>]) <span class="op">**</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="5">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">mean estimate</th>
+<th data-quarto-table-cell-role="th">standard error (sd over 200 runs)</th>
+<th data-quarto-table-cell-role="th">relative error</th>
+<th data-quarto-table-cell-role="th">variance_reduction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">plain Monte Carlo</td>
+<td>0.001</td>
+<td>2.2751e-04</td>
+<td>0.2348</td>
+<td>1.0000</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">importance sampling</td>
+<td>0.001</td>
+<td>1.3339e-05</td>
+<td>0.0133</td>
+<td>290.9212</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Same number of simulated years, but importance sampling gives a far more precise estimate of the tail probability: the variance-reduction factor says how many times more plain simulations would be needed for the same precision.</p>
+</section>
+<section id="how-extreme-was-the-crisis" class="level2">
+<h2 class="anchored" data-anchor-id="how-extreme-was-the-crisis">How extreme was the crisis?</h2>
+<p>The 2006 vintage lived through the crisis. Its one-year default rate, calendar year by calendar year (defaults during the year over loans still at risk on January 1):</p>
+<div id="b9d4f4c2" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:10.171086Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:10.171086Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:15.621668Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:15.620658Z&quot;}" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> yearly_default_rates(v, last_year<span class="op">=</span><span class="dv">2025</span>):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    g <span class="op">=</span> loans[loans[<span class="st">"vintage"</span>] <span class="op">==</span> v]</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    fp <span class="op">=</span> pd.to_datetime(g[<span class="st">"first_payment_period"</span>].astype(<span class="bu">str</span>), <span class="bu">format</span><span class="op">=</span><span class="st">"%Y%m"</span>).dt.to_period(<span class="st">"M"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> []</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> y <span class="kw">in</span> <span class="bu">range</span>(v <span class="op">+</span> <span class="dv">1</span>, last_year <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        t0 <span class="op">=</span> (pd.Period(<span class="ss">f"</span><span class="sc">{</span>y<span class="sc">}</span><span class="ss">-01"</span>, <span class="st">"M"</span>) <span class="op">-</span> fp).<span class="bu">apply</span>(<span class="kw">lambda</span> x: x.n)      <span class="co"># loan age on January 1</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        at_risk <span class="op">=</span> g[<span class="st">"time"</span>] <span class="op">&gt;</span> t0</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        defaulted <span class="op">=</span> at_risk <span class="op">&amp;</span> (g[<span class="st">"event"</span>] <span class="op">==</span> <span class="dv">1</span>) <span class="op">&amp;</span> (g[<span class="st">"time"</span>] <span class="op">&lt;=</span> t0 <span class="op">+</span> <span class="dv">12</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        rows.append({<span class="st">"year"</span>: y, <span class="st">"at risk on Jan 1"</span>: <span class="bu">int</span>(at_risk.<span class="bu">sum</span>()), <span class="st">"defaults"</span>: <span class="bu">int</span>(defaulted.<span class="bu">sum</span>()),</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"default rate"</span>: defaulted.<span class="bu">sum</span>() <span class="op">/</span> at_risk.<span class="bu">sum</span>()})</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> pd.DataFrame(rows).set_index(<span class="st">"year"</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>dr06 <span class="op">=</span> yearly_default_rates(<span class="dv">2006</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>dr17 <span class="op">=</span> yearly_default_rates(<span class="dv">2017</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>dr06.loc[<span class="dv">2007</span>:<span class="dv">2014</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="6">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">at risk on Jan 1</th>
+<th data-quarto-table-cell-role="th">defaults</th>
+<th data-quarto-table-cell-role="th">default rate</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">year</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2007</td>
+<td>48524</td>
+<td>851</td>
+<td>0.0175</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2008</td>
+<td>43695</td>
+<td>927</td>
+<td>0.0212</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2009</td>
+<td>37400</td>
+<td>1635</td>
+<td>0.0437</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2010</td>
+<td>26974</td>
+<td>1189</td>
+<td>0.0441</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2011</td>
+<td>20112</td>
+<td>850</td>
+<td>0.0423</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2012</td>
+<td>15644</td>
+<td>544</td>
+<td>0.0348</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2013</td>
+<td>10710</td>
+<td>283</td>
+<td>0.0264</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2014</td>
+<td>7151</td>
+<td>169</td>
+<td>0.0236</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Under the model calibrated on the 2017 book, the portfolio default rate in a year is <span class="math inline">\(\sum_b w_b\, p_b(Z)\)</span>. Solving for the economy <span class="math inline">\(Z\)</span> that produces the worst observed 2006 rate gives its quantile, i.e.&nbsp;how rare such a year is:</p>
+<div id="87a7ea81" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:15.623710Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:15.623710Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:15.653741Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:15.652734Z&quot;}" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>weights <span class="op">=</span> n_b <span class="op">/</span> n_b.<span class="bu">sum</span>()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> portfolio_dr(zv, rho<span class="op">=</span>RHO):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (conditional_pd(np.atleast_1d(zv), pd_b, rho) <span class="op">*</span> weights).<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>zgrid <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">6</span>, <span class="dv">3</span>, <span class="dv">20001</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>worst_year <span class="op">=</span> dr06[<span class="st">"default rate"</span>].idxmax()</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>worst <span class="op">=</span> dr06[<span class="st">"default rate"</span>].<span class="bu">max</span>()</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> []</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> rho <span class="kw">in</span> (<span class="fl">0.10</span>, <span class="fl">0.15</span>, <span class="fl">0.25</span>):</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    drs <span class="op">=</span> portfolio_dr(zgrid, rho)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    z_needed <span class="op">=</span> zgrid[np.argmin(np.<span class="bu">abs</span>(drs <span class="op">-</span> worst))]</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    rows.append({<span class="st">"correlation rho"</span>: rho, <span class="st">"economy Z needed"</span>: z_needed,</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"probability of a year at least that bad"</span>: norm.cdf(z_needed),</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"about once every (years)"</span>: <span class="dv">1</span> <span class="op">/</span> norm.cdf(z_needed),</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"99.9</span><span class="sc">% d</span><span class="st">efault rate"</span>: portfolio_dr(norm.ppf(<span class="fl">0.001</span>), rho)[<span class="dv">0</span>]})</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>tail <span class="op">=</span> pd.DataFrame(rows).set_index(<span class="st">"correlation rho"</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"worst observed year for the 2006 vintage: </span><span class="sc">{</span>worst_year<span class="sc">}</span><span class="ss">, default rate </span><span class="sc">{</span>worst<span class="sc">:.2%}</span><span class="ss">"</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>tail</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>worst observed year for the 2006 vintage: 2010, default rate 4.41%</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">economy Z needed</th>
+<th data-quarto-table-cell-role="th">probability of a year at least that bad</th>
+<th data-quarto-table-cell-role="th">about once every (years)</th>
+<th data-quarto-table-cell-role="th">99.9% default rate</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">correlation rho</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0.10</td>
+<td>-3.0165</td>
+<td>0.0013</td>
+<td>782.1323</td>
+<td>0.0463</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">0.15</td>
+<td>-2.5764</td>
+<td>0.0050</td>
+<td>200.3304</td>
+<td>0.0671</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0.25</td>
+<td>-2.1786</td>
+<td>0.0147</td>
+<td>68.1167</td>
+<td>0.1147</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>With the Basel correlation of 0.15, the worst crisis year of the 2006 vintage corresponds to an economy seen about once every 200 years, and the 99.9% level (once in 1,000 years) sits well above it: <strong>capital calibrated on a calm book would have covered the default rate of the worst crisis year.</strong> The margin depends on the correlation: with 0.10 the crisis becomes a once-in-about-800-years event and the 99.9% level only just covers it; with 0.25 the margin is wide. The correlation is a regulatory parameter precisely because the answer is so sensitive to it.</p>
+<p>(This compares default <em>rates</em>. Losses also depend on the loss given default, which in the model is already set at its crisis value.)</p>
+</section>
+<section id="which-correlation-do-the-data-imply" class="level2">
+<h2 class="anchored" data-anchor-id="which-correlation-do-the-data-imply">Which correlation do the data imply?</h2>
+<p>The yearly default rates themselves carry information about <span class="math inline">\(\rho\)</span>: if defaults were independent (<span class="math inline">\(\rho = 0\)</span>), every year would have nearly the same rate. Under the model, the yearly rate <span class="math inline">\(x\)</span> of a large book with probability of default <span class="math inline">\(PD\)</span> has the Vasicek density, and <span class="math inline">\(\rho\)</span> can be estimated by maximum likelihood from both vintages’ series (each with its own <span class="math inline">\(PD\)</span>):</p>
+<div id="544adb91" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:15.655739Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:15.654742Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:15.785922Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:15.784702Z&quot;}" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> vasicek_loglik(x, pd_, rho):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> norm.ppf(x)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (<span class="fl">0.5</span> <span class="op">*</span> np.log((<span class="dv">1</span> <span class="op">-</span> rho) <span class="op">/</span> rho) <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> a<span class="op">**</span><span class="dv">2</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>            <span class="op">-</span> (np.sqrt(<span class="dv">1</span> <span class="op">-</span> rho) <span class="op">*</span> a <span class="op">-</span> norm.ppf(pd_))<span class="op">**</span><span class="dv">2</span> <span class="op">/</span> (<span class="dv">2</span> <span class="op">*</span> rho)).<span class="bu">sum</span>()</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>series <span class="op">=</span> {<span class="dv">2006</span>: dr06.loc[<span class="dv">2007</span>:<span class="dv">2025</span>, <span class="st">"default rate"</span>].values, <span class="dv">2017</span>: dr17.loc[<span class="dv">2018</span>:<span class="dv">2025</span>, <span class="st">"default rate"</span>].values}</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> negloglik(theta):</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    rho <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>theta[<span class="dv">0</span>]))</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    pds <span class="op">=</span> norm.cdf(theta[<span class="dv">1</span>:])</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span><span class="bu">sum</span>(vasicek_loglik(series[v], p, rho) <span class="cf">for</span> v, p <span class="kw">in</span> <span class="bu">zip</span>(series, pds))</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>fit <span class="op">=</span> minimize(negloglik, x0<span class="op">=</span>[<span class="op">-</span><span class="fl">2.0</span>, <span class="op">-</span><span class="fl">2.0</span>, <span class="op">-</span><span class="fl">2.5</span>], method<span class="op">=</span><span class="st">"Nelder-Mead"</span>, options<span class="op">=</span>{<span class="st">"maxiter"</span>: <span class="dv">5000</span>, <span class="st">"xatol"</span>: <span class="fl">1e-6</span>, <span class="st">"fatol"</span>: <span class="fl">1e-8</span>})</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Same model, but one common PD for both vintages (a "through-the-cycle" PD)</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> negloglik_common(theta):</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    rho, pd_ <span class="op">=</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>theta[<span class="dv">0</span>])), norm.cdf(theta[<span class="dv">1</span>])</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span><span class="bu">sum</span>(vasicek_loglik(s, pd_, rho) <span class="cf">for</span> s <span class="kw">in</span> series.values())</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>fit_common <span class="op">=</span> minimize(negloglik_common, x0<span class="op">=</span>[<span class="op">-</span><span class="fl">2.0</span>, <span class="op">-</span><span class="fl">2.2</span>], method<span class="op">=</span><span class="st">"Nelder-Mead"</span>, options<span class="op">=</span>{<span class="st">"maxiter"</span>: <span class="dv">5000</span>, <span class="st">"xatol"</span>: <span class="fl">1e-6</span>, <span class="st">"fatol"</span>: <span class="fl">1e-8</span>})</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>pd.DataFrame({</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"estimated rho"</span>: [<span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>fit.x[<span class="dv">0</span>])), <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>fit_common.x[<span class="dv">0</span>]))],</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"PD 2006 vintage"</span>: [norm.cdf(fit.x[<span class="dv">1</span>]), norm.cdf(fit_common.x[<span class="dv">1</span>])],</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">"PD 2017 vintage"</span>: [norm.cdf(fit.x[<span class="dv">2</span>]), norm.cdf(fit_common.x[<span class="dv">1</span>])],</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>[<span class="st">"a separate PD for each vintage"</span>, <span class="st">"one common PD"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">estimated rho</th>
+<th data-quarto-table-cell-role="th">PD 2006 vintage</th>
+<th data-quarto-table-cell-role="th">PD 2017 vintage</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">a separate PD for each vintage</td>
+<td>0.0329</td>
+<td>0.0203</td>
+<td>0.0062</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">one common PD</td>
+<td>0.0725</td>
+<td>0.0163</td>
+<td>0.0163</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>The estimate depends on what the model is allowed to call “PD”:</p>
+<ul>
+<li>With <strong>a separate PD for each vintage</strong>, the estimated correlation is small. The crisis has been absorbed into the 2006 PD (about three times the 2017 one), so what is left is the modest year-to-year variation <em>around</em> each vintage’s own level.</li>
+<li>With <strong>one common PD</strong>, the crisis has to be explained by the economy, and the estimated correlation more than doubles. It is still below the regulatory 0.15, so on these data the Basel value is conservative.</li>
+</ul>
+<p>The lesson for validation: the correlation is meant to capture how far default rates swing around a <strong>through-the-cycle</strong> PD. A correlation estimated <em>after</em> fitting each period’s own PD hides part of the very risk capital is supposed to cover.</p>
+<p><em>Caveats a validator would raise:</em> the yearly rates come from <strong>aging</strong> books (a loan’s risk changes with its age), they are <strong>autocorrelated</strong> (bad years come in runs, while the model assumes independent years), and there are only 27 of them. The estimates are indicative, not a calibration.</p>
+<div id="8f618bcc" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-05T23:55:15.788714Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-05T23:55:15.787918Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-05T23:55:15.802128Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-05T23:55:15.801120Z&quot;}" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>dr <span class="op">=</span> pd.concat({<span class="dv">2006</span>: dr06, <span class="dv">2017</span>: dr17}, names<span class="op">=</span>[<span class="st">"vintage"</span>])</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>dr.to_csv(<span class="st">"../results/yearly_default_rates.csv"</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>tail.to_csv(<span class="st">"../results/crisis_tail_probability.csv"</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>calib.to_csv(<span class="st">"../results/simulation_calibration.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

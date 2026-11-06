@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.55">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Aaron Mauricio Gómez Jiménez">
+
+<title>Why did 2006 mortgages default almost six times more than 2017 ones?</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/quarto.js"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="index_files/libs/quarto-html/anchor.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul class="collapse">
+  <li><a href="#the-question" id="toc-the-question" class="nav-link active" data-scroll-target="#the-question">The question</a></li>
+  <li><a href="#the-answer-mostly-the-economy" id="toc-the-answer-mostly-the-economy" class="nav-link" data-scroll-target="#the-answer-mostly-the-economy">The answer: mostly the economy</a></li>
+  <li><a href="#two-traps-that-would-have-produced-the-wrong-answer" id="toc-two-traps-that-would-have-produced-the-wrong-answer" class="nav-link" data-scroll-target="#two-traps-that-would-have-produced-the-wrong-answer">Two traps that would have produced the wrong answer</a></li>
+  <li><a href="#validating-the-model" id="toc-validating-the-model" class="nav-link" data-scroll-target="#validating-the-model">Validating the model</a></li>
+  <li><a href="#portfolio-losses-and-capital" id="toc-portfolio-losses-and-capital" class="nav-link" data-scroll-target="#portfolio-losses-and-capital">Portfolio losses and capital</a></li>
+  <li><a href="#the-notebooks" id="toc-the-notebooks" class="nav-link" data-scroll-target="#the-notebooks">The notebooks</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Why did 2006 mortgages default almost six times more than 2017 ones?</h1>
+<p class="subtitle lead">Credit-risk modelling on 100,000 US mortgages: competing-risks survival, an out-of-time validated Cox model, borrower segmentation and a Monte Carlo of portfolio losses checked against the Basel formula</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Aaron Mauricio Gómez Jiménez </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><strong>November 2026</strong> · Python (pandas, lifelines, scikit-learn, SciPy) and SQL (DuckDB) · <a href="https://github.com/AMauGomez/mortgage-credit-risk">Code and notebooks</a> · Data: <a href="https://freddiemac.com/research/datasets/sf-loanlevel-dataset">Freddie Mac Single-Family Loan-Level Dataset</a></p>
+<style>
+.flow{display:flex;flex-wrap:wrap;gap:.6rem;margin:1.2rem 0 .4rem;align-items:stretch}
+.flow .step{flex:1 1 160px;border:1px solid #dadce0;border-radius:10px;padding:.75rem .8rem;background:#fafbfc}
+.flow .step .n{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#5f6368}
+.flow .step .big{font-size:1.35rem;font-weight:700;line-height:1.15;margin:.2rem 0}
+.flow .step .txt{font-size:.85rem;color:#3c4043;line-height:1.3}
+.flow .step.hl{border-color:#1a73e8;background:#e8f0fe}
+</style>
+<div class="flow">
+ <div class="step"><div class="n">Data</div><div class="big">100,000</div><div class="txt">30-year fixed-rate mortgages, 2006 and 2017 vintages, followed monthly to June 2026</div></div>
+ <div class="step"><div class="n">Default rate</div><div class="big">14.3% vs 2.5%</div><div class="txt">2006 vs 2017, excluding COVID-19 payment relief</div></div>
+ <div class="step hl"><div class="n">Why</div><div class="big">86% economy</div><div class="txt">of the gap is the environment; 14% is the mix of borrowers</div></div>
+ <div class="step hl"><div class="n">Validation</div><div class="big">0.78</div><div class="txt">out-of-time concordance: a 2006 model still ranks 2017 borrowers, but overstates their risk</div></div>
+</div>
+<section id="the-question" class="level2">
+<h2 class="anchored" data-anchor-id="the-question">The question</h2>
+<p>Mortgages originated in 2006, just before the US housing crash, defaulted almost six times more than mortgages originated in 2017. Were 2006 borrowers simply riskier, or did ordinary borrowers meet an extraordinary economy? The answer decides how a bank should build and recalibrate its credit models.</p>
+<p>Two random samples of 50,000 loans each come from Freddie Mac’s public loan-level data. Every loan is followed month by month until it is repaid, defaults, or the data end.</p>
+</section>
+<section id="the-answer-mostly-the-economy" class="level2">
+<h2 class="anchored" data-anchor-id="the-answer-mostly-the-economy">The answer: mostly the economy</h2>
+<p>Giving the 2006 book the safer 2017 mix of borrowers barely lowers its default rate (10.9% → 9.7% within 60 months). A Cox model that adjusts for credit score, leverage, debt-to-income, pricing and loan purpose reaches the same conclusion by a different route: an otherwise identical 2006 loan had <strong>4.6 times</strong> the default hazard.</p>
+<p><img src="figures/composition_vs_environment.png" class="img-fluid"></p>
+</section>
+<section id="two-traps-that-would-have-produced-the-wrong-answer" class="level2">
+<h2 class="anchored" data-anchor-id="two-traps-that-would-have-produced-the-wrong-answer">Two traps that would have produced the wrong answer</h2>
+<p><strong>In 2020, “90 days late” did not mean default.</strong> The standard 90-days-past-due definition, applied blindly, more than doubles the 2017 default rate (5.9% instead of 2.5%), because borrowers in COVID-19 forbearance were reported as delinquent. Only 30% of the loans whose first serious delinquency happened under forbearance ever defaulted.</p>
+<p><img src="figures/forbearance_spike.png" class="img-fluid"></p>
+<p><strong>Treating prepayment as censoring nearly doubles the default probability.</strong> Most mortgages leave the book by prepayment, and a refinanced loan cannot default. The usual 1 − Kaplan-Meier estimate puts the 100-month default probability of the 2006 vintage at 25.5%; the competing-risks (Aalen-Johansen) estimate is 13.5%.</p>
+<p><img src="figures/km_vs_cif.png" class="img-fluid"></p>
+</section>
+<section id="validating-the-model" class="level2">
+<h2 class="anchored" data-anchor-id="validating-the-model">Validating the model</h2>
+<ul>
+<li><strong>Out of time:</strong> a Cox model fitted on the 2006 vintage ranks 2017 borrowers almost as well as a model fitted on 2017 itself (concordance 0.778 vs 0.790) but overstates their probability of default several times over. Discrimination transfers across the cycle; calibration does not.</li>
+<li><strong>Residual diagnostics:</strong> scaled Schoenfeld residuals show that origination information ages (the credit-score effect loses about two thirds of its size over the life of a loan); martingale residuals show the credit score acts non-linearly; Cox-Snell residuals show the model overstates the accumulated risk of its riskiest loans, consistent with a vintage effect that changes over time.</li>
+</ul>
+<p><img src="figures/out_of_time_calibration.png" class="img-fluid"></p>
+</section>
+<section id="portfolio-losses-and-capital" class="level2">
+<h2 class="anchored" data-anchor-id="portfolio-losses-and-capital">Portfolio losses and capital</h2>
+<p>A one-factor (Vasicek) model of correlated defaults, calibrated on the 2017 book with a crisis-level loss given default:</p>
+<ul>
+<li>Monte Carlo and the closed-form Basel formula give the same 99.9% loss (1.71% vs 1.75% of the book).</li>
+<li><strong>Importance sampling</strong> estimates the 1-in-1,000 tail with about 290 times less variance than plain Monte Carlo.</li>
+<li>The worst crisis year of the 2006 vintage (2010, 4.4% of loans defaulting) corresponds, with the Basel correlation of 0.15, to roughly a once-in-200-years economy; the 99.9% level would have covered it.</li>
+</ul>
+<p><img src="figures/loss_distribution.png" class="img-fluid"></p>
+</section>
+<section id="the-notebooks" class="level2">
+<h2 class="anchored" data-anchor-id="the-notebooks">The notebooks</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Notebook</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><a href="notebooks/01_data_and_default_definition.html">Data and the definition of default</a></td>
+<td>SQL pipeline, outcomes, the forbearance trap, loss given default</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><a href="notebooks/02_survival_competing_risks.html">Survival with competing risks</a></td>
+<td>Aalen-Johansen vs Kaplan-Meier, default and prepayment curves, default by credit score</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><a href="notebooks/03_cox_model.html">Cox model</a></td>
+<td>Hazard ratios, proportional-hazards test, residual diagnostics, effects by loan age, out-of-time validation</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><a href="notebooks/04_segmentation.html">Segmentation</a></td>
+<td>PCA, k-means, composition vs environment</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td><a href="notebooks/05_portfolio_loss_simulation.html">Portfolio loss simulation</a></td>
+<td>Vasicek Monte Carlo, Basel check, importance sampling, crisis tail probability, correlation by maximum likelihood</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>The data are <strong>not included</strong> in the repository: Freddie Mac’s terms allow publishing research results but not the dataset or extracts of it. Everything shown is aggregated; no individual loan appears. Instructions to reproduce are in the <a href="https://github.com/AMauGomez/mortgage-credit-risk#data-and-reproducibility">README</a>. Freddie Mac provides the dataset “as is” and does not endorse this analysis.</p>
+<p><strong>Skills shown:</strong> survival analysis with competing risks · Cox proportional hazards and residual diagnostics · out-of-time model validation · PCA and clustering · Monte Carlo simulation and importance sampling · Vasicek / Basel IRB capital · maximum likelihood · SQL (DuckDB) · Python</p>
+<hr>
+<p>Code: MIT License. Aaron Mauricio Gómez Jiménez · <a href="https://www.linkedin.com/in/amaugomezjimenez">LinkedIn</a> · <a href="https://orcid.org/0009-0003-1099-0431">ORCID</a></p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.55">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>3. A Cox model for default: borrowers versus environment</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="03_cox_model_files/libs/clipboard/clipboard.min.js"></script>
+<script src="03_cox_model_files/libs/quarto-html/quarto.js"></script>
+<script src="03_cox_model_files/libs/quarto-html/popper.min.js"></script>
+<script src="03_cox_model_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="03_cox_model_files/libs/quarto-html/anchor.min.js"></script>
+<link href="03_cox_model_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="03_cox_model_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="03_cox_model_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="03_cox_model_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="03_cox_model_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#the-model-with-a-vintage-effect" id="toc-the-model-with-a-vintage-effect" class="nav-link active" data-scroll-target="#the-model-with-a-vintage-effect">The model with a vintage effect</a></li>
+  <li><a href="#checking-the-proportional-hazards-assumption" id="toc-checking-the-proportional-hazards-assumption" class="nav-link" data-scroll-target="#checking-the-proportional-hazards-assumption">Checking the proportional-hazards assumption</a></li>
+  <li><a href="#residual-diagnostics" id="toc-residual-diagnostics" class="nav-link" data-scroll-target="#residual-diagnostics">Residual diagnostics</a></li>
+  <li><a href="#validation-does-a-model-built-on-2006-work-on-2017" id="toc-validation-does-a-model-built-on-2006-work-on-2017" class="nav-link" data-scroll-target="#validation-does-a-model-built-on-2006-work-on-2017">Validation: does a model built on 2006 work on 2017?</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">3. A Cox model for default: borrowers versus environment</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Notebook 2 showed that, within every credit-score band, 2006 loans defaulted 3 to 5 times more often than 2017 loans. A regression model adjusts for all borrower characteristics at once and asks: <strong>for two loans with the same profile, how much riskier was the 2006 one?</strong></p>
+<p>Because prepayment competes with default, the model is a <strong>cause-specific Cox model</strong>: it describes the hazard of default among loans still running, and prepaid loans are censored at prepayment. (That is correct for the <em>hazard</em>; probabilities of default still require the competing-risks machinery of notebook 2.)</p>
+<div id="d3f1410e" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:34:24.558469Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:34:24.557462Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:34:28.117080Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:34:28.117080Z&quot;}" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">"../src"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> lifelines <span class="im">import</span> CoxPHFitter</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> lifelines.statistics <span class="im">import</span> proportional_hazard_test</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> lifelines.utils <span class="im">import</span> concordance_index</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> credit_risk.data <span class="im">import</span> load_loans</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> credit_risk.survival <span class="im">import</span> cumulative_incidence</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>pd.set_option(<span class="st">"display.precision"</span>, <span class="dv">3</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">110</span>, <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>BLUE, RED, GREY <span class="op">=</span> <span class="st">"#1a73e8"</span>, <span class="st">"#d93025"</span>, <span class="st">"#80868b"</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>loans <span class="op">=</span> load_loans((<span class="dv">2006</span>, <span class="dv">2017</span>)).dropna(subset<span class="op">=</span>[<span class="st">"fico"</span>, <span class="st">"ltv"</span>, <span class="st">"dti"</span>, <span class="st">"rate"</span>])</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Covariates on interpretable scales. The interest rate is expressed as the premium over the</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co"># median rate of loans originated the same year: rates fell from ~6.4% to ~4.2% between the two</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="co"># vintages for reasons unrelated to the borrower, while the premium reflects the lender's view of risk.</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">"fico_per_20"</span>: (loans[<span class="st">"fico"</span>] <span class="op">-</span> <span class="dv">740</span>) <span class="op">/</span> <span class="dv">20</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ltv_per_10"</span>: (loans[<span class="st">"ltv"</span>] <span class="op">-</span> <span class="dv">75</span>) <span class="op">/</span> <span class="dv">10</span>,</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">"dti_per_10"</span>: (loans[<span class="st">"dti"</span>] <span class="op">-</span> <span class="dv">35</span>) <span class="op">/</span> <span class="dv">10</span>,</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">"rate_premium"</span>: loans[<span class="st">"rate"</span>] <span class="op">-</span> loans.groupby(<span class="st">"vintage"</span>)[<span class="st">"rate"</span>].transform(<span class="st">"median"</span>),</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">"investor"</span>: (loans[<span class="st">"occupancy"</span>] <span class="op">==</span> <span class="st">"I"</span>).astype(<span class="bu">int</span>),</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">"cash_out_refi"</span>: (loans[<span class="st">"purpose"</span>] <span class="op">==</span> <span class="st">"C"</span>).astype(<span class="bu">int</span>),</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">"first_time_buyer"</span>: (loans[<span class="st">"first_time_buyer"</span>] <span class="op">==</span> <span class="st">"Y"</span>).astype(<span class="bu">int</span>),</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">"single_borrower"</span>: (loans[<span class="st">"n_borrowers"</span>] <span class="op">==</span> <span class="dv">1</span>).astype(<span class="bu">int</span>),</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">"vintage_2006"</span>: (loans[<span class="st">"vintage"</span>] <span class="op">==</span> <span class="dv">2006</span>).astype(<span class="bu">int</span>),</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">"time"</span>: loans[<span class="st">"time"</span>],</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">"default"</span>: (loans[<span class="st">"event"</span>] <span class="op">==</span> <span class="dv">1</span>).astype(<span class="bu">int</span>),</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="st">"vintage"</span>: loans[<span class="st">"vintage"</span>],</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(X)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="1">
+<pre><code>97062</code></pre>
+</div>
+</div>
+<section id="the-model-with-a-vintage-effect" class="level2">
+<h2 class="anchored" data-anchor-id="the-model-with-a-vintage-effect">The model with a vintage effect</h2>
+<div id="0e312309" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:34:28.120175Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:34:28.119090Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:34:28.437786Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:34:28.436680Z&quot;}" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>cox <span class="op">=</span> CoxPHFitter()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>cox.fit(X.drop(columns<span class="op">=</span><span class="st">"vintage"</span>), duration_col<span class="op">=</span><span class="st">"time"</span>, event_col<span class="op">=</span><span class="st">"default"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>hr <span class="op">=</span> cox.summary[[<span class="st">"exp(coef)"</span>, <span class="st">"exp(coef) lower 95%"</span>, <span class="st">"exp(coef) upper 95%"</span>, <span class="st">"p"</span>]]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>hr.columns <span class="op">=</span> [<span class="st">"hazard ratio"</span>, <span class="st">"lower 95%"</span>, <span class="st">"upper 95%"</span>, <span class="st">"p"</span>]</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>hr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="2">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">hazard ratio</th>
+<th data-quarto-table-cell-role="th">lower 95%</th>
+<th data-quarto-table-cell-role="th">upper 95%</th>
+<th data-quarto-table-cell-role="th">p</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">covariate</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">fico_per_20</td>
+<td>0.857</td>
+<td>0.851</td>
+<td>0.862</td>
+<td>0.000e+00</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">ltv_per_10</td>
+<td>1.231</td>
+<td>1.211</td>
+<td>1.251</td>
+<td>1.756e-135</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">dti_per_10</td>
+<td>1.240</td>
+<td>1.216</td>
+<td>1.264</td>
+<td>6.178e-106</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">rate_premium</td>
+<td>1.566</td>
+<td>1.485</td>
+<td>1.652</td>
+<td>4.811e-61</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">investor</td>
+<td>0.677</td>
+<td>0.606</td>
+<td>0.757</td>
+<td>4.914e-12</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">cash_out_refi</td>
+<td>1.428</td>
+<td>1.359</td>
+<td>1.499</td>
+<td>8.201e-46</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">first_time_buyer</td>
+<td>0.934</td>
+<td>0.872</td>
+<td>1.000</td>
+<td>5.080e-02</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">single_borrower</td>
+<td>1.521</td>
+<td>1.455</td>
+<td>1.591</td>
+<td>2.120e-76</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">vintage_2006</td>
+<td>4.575</td>
+<td>4.289</td>
+<td>4.880</td>
+<td>0.000e+00</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Reading the hazard ratios:</p>
+<ul>
+<li><strong>Credit score:</strong> every 20 FICO points <em>lower</em> multiplies the default hazard by about 1.17 (= 1 / 0.857).</li>
+<li><strong>Loan-to-value and debt-to-income:</strong> more leverage, more risk.</li>
+<li><strong>Rate premium:</strong> loans priced above their year’s typical rate carried risk the lender saw and the other variables do not capture.</li>
+<li><strong>Investor properties:</strong> a hazard ratio <em>below</em> 1 looks surprising, but it is conditional on everything else, including the rate premium: lenders charge investors more and demand more equity, so the remaining risk is lower. A coefficient is an effect <em>given the other variables</em>, not a stand-alone fact.</li>
+<li><strong>Vintage 2006:</strong> even after adjusting for everything above, a 2006 loan had several times the default hazard of an identical 2017 loan. That is the environment: the collapse in house prices that left borrowers owing more than their homes were worth.</li>
+</ul>
+</section>
+<section id="checking-the-proportional-hazards-assumption" class="level2">
+<h2 class="anchored" data-anchor-id="checking-the-proportional-hazards-assumption">Checking the proportional-hazards assumption</h2>
+<p>The Cox model assumes each hazard ratio is constant over the life of the loan. With 100,000 loans, a formal test will flag tiny departures, so the test statistic matters more than the p-value: which variables violate the assumption <em>most</em>?</p>
+<div id="9d5a8336" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:34:28.440794Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:34:28.440794Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:35:56.171194Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:35:56.171194Z&quot;}" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ph <span class="op">=</span> proportional_hazard_test(cox, X.drop(columns<span class="op">=</span><span class="st">"vintage"</span>), time_transform<span class="op">=</span><span class="st">"rank"</span>).summary</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ph[[<span class="st">"test_statistic"</span>, <span class="st">"p"</span>]].sort_values(<span class="st">"test_statistic"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">test_statistic</th>
+<th data-quarto-table-cell-role="th">p</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">fico_per_20</td>
+<td>237.053</td>
+<td>1.727e-53</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">single_borrower</td>
+<td>29.562</td>
+<td>5.416e-08</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">ltv_per_10</td>
+<td>27.002</td>
+<td>2.032e-07</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">cash_out_refi</td>
+<td>20.816</td>
+<td>5.057e-06</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">dti_per_10</td>
+<td>18.699</td>
+<td>1.531e-05</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">vintage_2006</td>
+<td>8.094</td>
+<td>4.440e-03</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">rate_premium</td>
+<td>7.483</td>
+<td>6.229e-03</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">investor</td>
+<td>0.071</td>
+<td>7.893e-01</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">first_time_buyer</td>
+<td>0.013</td>
+<td>9.094e-01</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>The largest violation is the <strong>credit score</strong>: a score measured at origination says less and less about the borrower as the years pass (incomes, debts and house prices change), so its effect fades with loan age. The vintage effect also varies over time, because the crisis struck at a specific <em>calendar</em> date. A single hazard ratio averages effects that change over the life of the loan. We estimate both separately by loan age, refitting the model on loans still at risk at the start of each period (left truncation):</p>
+<div id="877f95b5" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:35:56.174493Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:35:56.174493Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:36:01.034065Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:36:01.033471Z&quot;}" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> hr_vintage_in_window(start, end):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    w <span class="op">=</span> X[X[<span class="st">"time"</span>] <span class="op">&gt;</span> start].copy()</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    w[<span class="st">"entry"</span>] <span class="op">=</span> start</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    w[<span class="st">"default"</span>] <span class="op">=</span> ((w[<span class="st">"default"</span>] <span class="op">==</span> <span class="dv">1</span>) <span class="op">&amp;</span> (w[<span class="st">"time"</span>] <span class="op">&lt;=</span> end)).astype(<span class="bu">int</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    w[<span class="st">"time"</span>] <span class="op">=</span> w[<span class="st">"time"</span>].clip(upper<span class="op">=</span>end)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    m <span class="op">=</span> CoxPHFitter().fit(w.drop(columns<span class="op">=</span><span class="st">"vintage"</span>), duration_col<span class="op">=</span><span class="st">"time"</span>, event_col<span class="op">=</span><span class="st">"default"</span>, entry_col<span class="op">=</span><span class="st">"entry"</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> m.summary</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {<span class="st">"loan age (months)"</span>: <span class="ss">f"</span><span class="sc">{</span>start <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss">–</span><span class="sc">{</span>end<span class="sc">}</span><span class="ss">"</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            <span class="st">"HR vintage 2006 vs 2017"</span>: s.loc[<span class="st">"vintage_2006"</span>, <span class="st">"exp(coef)"</span>],</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>            <span class="st">"95% CI vintage"</span>: <span class="ss">f"</span><span class="sc">{</span>s<span class="sc">.</span>loc[<span class="st">'vintage_2006'</span>, <span class="st">'exp(coef) lower 95%'</span>]<span class="sc">:.2f}</span><span class="ss">–</span><span class="sc">{</span>s<span class="sc">.</span>loc[<span class="st">'vintage_2006'</span>, <span class="st">'exp(coef) upper 95%'</span>]<span class="sc">:.2f}</span><span class="ss">"</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>            <span class="st">"HR per 20 FICO points"</span>: s.loc[<span class="st">"fico_per_20"</span>, <span class="st">"exp(coef)"</span>],</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>            <span class="st">"defaults in window"</span>: <span class="bu">int</span>(w[<span class="st">"default"</span>].<span class="bu">sum</span>())}</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>windows <span class="op">=</span> pd.DataFrame([hr_vintage_in_window(a, b) <span class="cf">for</span> a, b <span class="kw">in</span> [(<span class="dv">0</span>, <span class="dv">24</span>), (<span class="dv">24</span>, <span class="dv">48</span>), (<span class="dv">48</span>, <span class="dv">72</span>), (<span class="dv">72</span>, <span class="dv">108</span>)]])</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>windows</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">loan age (months)</th>
+<th data-quarto-table-cell-role="th">HR vintage 2006 vs 2017</th>
+<th data-quarto-table-cell-role="th">95% CI vintage</th>
+<th data-quarto-table-cell-role="th">HR per 20 FICO points</th>
+<th data-quarto-table-cell-role="th">defaults in window</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>1–24</td>
+<td>3.150</td>
+<td>2.80–3.54</td>
+<td>0.807</td>
+<td>2055</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>25–48</td>
+<td>6.574</td>
+<td>5.84–7.40</td>
+<td>0.853</td>
+<td>3095</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>49–72</td>
+<td>4.376</td>
+<td>3.81–5.02</td>
+<td>0.902</td>
+<td>1785</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>73–108</td>
+<td>4.428</td>
+<td>3.74–5.24</td>
+<td>0.911</td>
+<td>894</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Two findings hidden inside the single hazard ratios:</p>
+<ul>
+<li>For an otherwise identical loan, being originated in 2006 multiplied the default hazard most in months 25–48 of the loan’s life, which for these loans is 2008–2010, the core of the crisis.</li>
+<li>The protective effect of a higher credit score is strongest in the first two years and weakens afterwards (hazard ratio per 20 points moving towards 1).</li>
+</ul>
+<p>The proportional-hazards violations are not a nuisance to hide: they <em>are</em> findings. An alternative specification stratifies by vintage (a separate baseline hazard per vintage, shared covariate effects); the borrower effects barely change:</p>
+<div id="8c0264fc" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:36:01.037157Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:36:01.036160Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:36:01.471547Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:36:01.470537Z&quot;}" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>strat <span class="op">=</span> CoxPHFitter().fit(X.drop(columns<span class="op">=</span>[<span class="st">"vintage_2006"</span>]), duration_col<span class="op">=</span><span class="st">"time"</span>, event_col<span class="op">=</span><span class="st">"default"</span>, strata<span class="op">=</span>[<span class="st">"vintage"</span>])</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>hr_strat <span class="op">=</span> strat.summary[[<span class="st">"exp(coef)"</span>, <span class="st">"exp(coef) lower 95%"</span>, <span class="st">"exp(coef) upper 95%"</span>]]</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>hr_strat.columns <span class="op">=</span> [<span class="st">"hazard ratio"</span>, <span class="st">"lower 95%"</span>, <span class="st">"upper 95%"</span>]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>hr_strat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="5">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">hazard ratio</th>
+<th data-quarto-table-cell-role="th">lower 95%</th>
+<th data-quarto-table-cell-role="th">upper 95%</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">covariate</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">fico_per_20</td>
+<td>0.856</td>
+<td>0.851</td>
+<td>0.862</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">ltv_per_10</td>
+<td>1.231</td>
+<td>1.211</td>
+<td>1.251</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">dti_per_10</td>
+<td>1.240</td>
+<td>1.216</td>
+<td>1.264</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">rate_premium</td>
+<td>1.568</td>
+<td>1.487</td>
+<td>1.654</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">investor</td>
+<td>0.678</td>
+<td>0.607</td>
+<td>0.757</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">cash_out_refi</td>
+<td>1.427</td>
+<td>1.359</td>
+<td>1.499</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">first_time_buyer</td>
+<td>0.935</td>
+<td>0.873</td>
+<td>1.001</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">single_borrower</td>
+<td>1.522</td>
+<td>1.456</td>
+<td>1.592</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="residual-diagnostics" class="level2">
+<h2 class="anchored" data-anchor-id="residual-diagnostics">Residual diagnostics</h2>
+<p>A formal test says <em>whether</em> an assumption fails; residuals show <em>how</em>. The Cox model has several kinds of residuals, each built to check something different:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Residual</th>
+<th>Checks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Scaled Schoenfeld</td>
+<td>proportional hazards: does a coefficient drift over time?</td>
+</tr>
+<tr class="even">
+<td>Martingale</td>
+<td>functional form: is a covariate’s effect really linear on the log-hazard scale?</td>
+</tr>
+<tr class="odd">
+<td>Cox-Snell</td>
+<td>overall fit of the model</td>
+</tr>
+<tr class="even">
+<td>Deviance</td>
+<td>outlying observations</td>
+</tr>
+</tbody>
+</table>
+<p>With almost 100,000 loans, scatter plots of individual residuals are an unreadable cloud, so the plots below smooth or bin them.</p>
+<div id="13356964" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:36:01.475135Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:36:01.473625Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:37:33.744133Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:37:33.743127Z&quot;}" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.nonparametric.smoothers_lowess <span class="im">import</span> lowess</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>model_df <span class="op">=</span> X.drop(columns<span class="op">=</span><span class="st">"vintage"</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>schoenfeld <span class="op">=</span> cox.compute_residuals(model_df, kind<span class="op">=</span><span class="st">"scaled_schoenfeld"</span>)   <span class="co"># one row per default</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>event_times <span class="op">=</span> model_df.loc[schoenfeld.index, <span class="st">"time"</span>]</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Only ages where both vintages are still at risk: 2017 loans are observed for at most ~110 months,</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># so beyond that the risk set is all-2006 and time trends are not comparable.</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>keep <span class="op">=</span> event_times <span class="op">&lt;=</span> <span class="dv">108</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">3.4</span>))</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, var <span class="kw">in</span> <span class="bu">zip</span>(axes, [<span class="st">"fico_per_20"</span>, <span class="st">"ltv_per_10"</span>, <span class="st">"dti_per_10"</span>]):</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    beta_t <span class="op">=</span> cox.params_[var] <span class="op">+</span> schoenfeld.loc[keep, var]     <span class="co"># beta(t) ~ beta + scaled residual</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    smooth <span class="op">=</span> lowess(beta_t, event_times[keep], frac<span class="op">=</span><span class="fl">0.3</span>, return_sorted<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    ax.plot(smooth[:, <span class="dv">0</span>], smooth[:, <span class="dv">1</span>], color<span class="op">=</span>RED, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"smoothed β(t)"</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    ax.axhline(cox.params_[var], color<span class="op">=</span>BLUE, ls<span class="op">=</span><span class="st">"--"</span>, label<span class="op">=</span><span class="st">"Cox estimate (constant β)"</span>)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    ax.axhline(<span class="dv">0</span>, color<span class="op">=</span>GREY, lw<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    ax.set_title(var)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">"loan age at default (months)"</span>)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">"coefficient implied by</span><span class="ch">\n</span><span class="st">scaled Schoenfeld residuals"</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend(frameon<span class="op">=</span><span class="va">False</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"../figures/schoenfeld_residuals.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_cox_model_files/figure-html/cell-7-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Scaled Schoenfeld residuals</strong> (Grambsch–Therneau): added to the estimated coefficient, they trace the coefficient as a function of loan age. A flat line means proportional hazards. All three effects weaken as loans age: the credit-score coefficient loses about two thirds of its size (the same weakening seen in the hazard ratios by loan age, now continuously), and loan-to-value and debt-to-income lose about 40%. Information measured at origination ages. (Read the <em>shape</em> of these curves rather than their level: the scaled residuals use a variance averaged over all default times, an approximation that shifts the curves when the mix of loans at risk changes, as it does here between vintages.)</p>
+<p>The vintage effect is not plotted: the scaled residuals rely on an approximation that breaks down when the composition of the risk set changes drastically, which is exactly what happens to a vintage indicator (late in time only 2006 loans remain). The hazard ratios by loan-age window above are the reliable view of that effect.</p>
+<div id="a7fd0e57" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:37:33.747129Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:37:33.745640Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:37:34.330778Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:37:34.329773Z&quot;}" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>martingale <span class="op">=</span> cox.compute_residuals(model_df, kind<span class="op">=</span><span class="st">"martingale"</span>)[<span class="st">"martingale"</span>]</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">3.4</span>), sharey<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, (var, label) <span class="kw">in</span> <span class="bu">zip</span>(axes, [(<span class="st">"fico"</span>, <span class="st">"credit score (FICO)"</span>), (<span class="st">"ltv"</span>, <span class="st">"loan-to-value (%)"</span>), (<span class="st">"dti"</span>, <span class="st">"debt-to-income (%)"</span>)]):</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    bins <span class="op">=</span> pd.qcut(loans.loc[martingale.index, var], <span class="dv">20</span>, duplicates<span class="op">=</span><span class="st">"drop"</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    g <span class="op">=</span> martingale.groupby(bins, observed<span class="op">=</span><span class="va">True</span>).agg([<span class="st">"mean"</span>, <span class="st">"sem"</span>])</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    mids <span class="op">=</span> loans.loc[martingale.index, var].groupby(bins, observed<span class="op">=</span><span class="va">True</span>).mean()</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    ax.errorbar(mids, g[<span class="st">"mean"</span>], yerr<span class="op">=</span><span class="fl">1.96</span> <span class="op">*</span> g[<span class="st">"sem"</span>], fmt<span class="op">=</span><span class="st">"o"</span>, color<span class="op">=</span>BLUE, ms<span class="op">=</span><span class="dv">4</span>, capsize<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    ax.axhline(<span class="dv">0</span>, color<span class="op">=</span>GREY, ls<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(label)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">"mean martingale residual</span><span class="ch">\n</span><span class="st">(20 equal-size bins, 95% CI)"</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"../figures/martingale_residuals.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_cox_model_files/figure-html/cell-8-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Martingale residuals</strong> are observed minus expected defaults for each loan. If a covariate enters the model in the right form, their mean is about zero at every value of that covariate.</p>
+<ul>
+<li><strong>Credit score:</strong> a clear pattern. Loans with scores around 650–700 default more than the linear term predicts and loans above 750 less: the effect of the score is not linear on the log-hazard scale. A spline or score bands would fit better; with a mean of about 0.08 defaults per loan, deviations of ±0.01–0.02 are not negligible.</li>
+<li><strong>Loan-to-value:</strong> close to zero except at the lowest values, where defaults are rarer than predicted.</li>
+<li><strong>Debt-to-income:</strong> flat, except the highest band (above 50%), which defaults <em>less</em> than predicted, plausibly because such loans required compensating strengths to be approved.</li>
+</ul>
+<p>These are the refinements a model-development team would make next; the conclusions about the vintage effect do not depend on them (the stratified model and the segmentation of notebook 4 reach the same answer).</p>
+<div id="854cb2da" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:37:34.333073Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:37:34.333073Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:37:34.701256Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:37:34.700166Z&quot;}" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>cox_snell <span class="op">=</span> model_df[<span class="st">"default"</span>] <span class="op">-</span> martingale          <span class="co"># Cox-Snell residual = estimated cumulative hazard</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> lifelines <span class="im">import</span> NelsonAalenFitter</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>na <span class="op">=</span> NelsonAalenFitter().fit(cox_snell, event_observed<span class="op">=</span>model_df.loc[martingale.index, <span class="st">"default"</span>])</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>H <span class="op">=</span> na.cumulative_hazard_</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">4.6</span>, <span class="dv">4</span>))</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>ax.plot(H.index, H.iloc[:, <span class="dv">0</span>], color<span class="op">=</span>BLUE, label<span class="op">=</span><span class="st">"Nelson–Aalen of the residuals"</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>lim <span class="op">=</span> <span class="bu">float</span>(np.quantile(cox_snell, <span class="fl">0.999</span>))</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>ax.plot([<span class="dv">0</span>, lim], [<span class="dv">0</span>, lim], color<span class="op">=</span>GREY, ls<span class="op">=</span><span class="st">"--"</span>, label<span class="op">=</span><span class="st">"45° line (perfect fit)"</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="dv">0</span>, lim)<span class="op">;</span> ax.set_ylim(<span class="dv">0</span>, lim <span class="op">*</span> <span class="fl">1.2</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"Cox-Snell residual"</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"estimated cumulative hazard"</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>ax.legend(frameon<span class="op">=</span><span class="va">False</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"../figures/cox_snell_residuals.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_cox_model_files/figure-html/cell-9-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Cox-Snell residuals</strong> are each loan’s estimated cumulative hazard at its observed time. If the model is right they behave like a censored sample from an exponential distribution with mean 1, so their own cumulative hazard follows the 45° line.</p>
+<p>The fit is good for small residuals, where most loans are, but the curve bends below the line: the model <strong>overstates</strong> the accumulated risk of the loans it considers riskiest. Those are mostly long-lived 2006 loans, for which a single hazard ratio for the vintage, applied over twenty years, is too large once the crisis has passed (the hazard ratios by loan age and the stratified model address this). A model with a time-varying vintage effect would bring the curve closer to the line.</p>
+<div id="ffee892a" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:37:34.702245Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:37:34.702245Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:37:34.824113Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:37:34.823099Z&quot;}" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>deviance <span class="op">=</span> cox.compute_residuals(model_df, kind<span class="op">=</span><span class="st">"deviance"</span>)[<span class="st">"deviance"</span>]</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>pd.Series({</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"loans"</span>: <span class="bu">len</span>(deviance),</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"|deviance| &gt; 2"</span>: <span class="bu">int</span>((deviance.<span class="bu">abs</span>() <span class="op">&gt;</span> <span class="dv">2</span>).<span class="bu">sum</span>()),</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"|deviance| &gt; 3"</span>: <span class="bu">int</span>((deviance.<span class="bu">abs</span>() <span class="op">&gt;</span> <span class="dv">3</span>).<span class="bu">sum</span>()),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"share &gt; 3"</span>: (deviance.<span class="bu">abs</span>() <span class="op">&gt;</span> <span class="dv">3</span>).mean(),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"largest |deviance|"</span>: deviance.<span class="bu">abs</span>().<span class="bu">max</span>(),</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="9">
+<pre><code>loans                 97062.000
+|deviance| &gt; 2         2682.000
+|deviance| &gt; 3          258.000
+share &gt; 3                 0.003
+largest |deviance|        4.799
+dtype: float64</code></pre>
+</div>
+</div>
+<p><strong>Deviance residuals</strong> rescale the martingale residuals to be roughly symmetric, so large absolute values flag loans the model explains poorly (typically a default the model considered very unlikely). Only the counts are shown here: the individual loans are not published.</p>
+</section>
+<section id="validation-does-a-model-built-on-2006-work-on-2017" class="level2">
+<h2 class="anchored" data-anchor-id="validation-does-a-model-built-on-2006-work-on-2017">Validation: does a model built on 2006 work on 2017?</h2>
+<p>A credit model is used on loans it has never seen, in an economy that may be different. The test that matters is <strong>out of time</strong>: fit on 2006, evaluate on 2017. Two separate questions:</p>
+<ol type="1">
+<li><strong>Discrimination:</strong> does it still <em>rank</em> borrowers correctly? (concordance index; 0.5 = coin flip, 1 = perfect)</li>
+<li><strong>Calibration:</strong> does it get the <em>level</em> of risk right?</li>
+</ol>
+<div id="2c2dd4bd" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:37:34.827668Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:37:34.827668Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:37:36.148009Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:37:36.147406Z&quot;}" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>covs <span class="op">=</span> [<span class="st">"fico_per_20"</span>, <span class="st">"ltv_per_10"</span>, <span class="st">"dti_per_10"</span>, <span class="st">"rate_premium"</span>, <span class="st">"investor"</span>, <span class="st">"cash_out_refi"</span>, <span class="st">"first_time_buyer"</span>, <span class="st">"single_borrower"</span>]</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>train, test <span class="op">=</span> X[X[<span class="st">"vintage"</span>] <span class="op">==</span> <span class="dv">2006</span>], X[X[<span class="st">"vintage"</span>] <span class="op">==</span> <span class="dv">2017</span>]</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>m06 <span class="op">=</span> CoxPHFitter().fit(train[covs <span class="op">+</span> [<span class="st">"time"</span>, <span class="st">"default"</span>]], duration_col<span class="op">=</span><span class="st">"time"</span>, event_col<span class="op">=</span><span class="st">"default"</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>m17 <span class="op">=</span> CoxPHFitter().fit(test[covs <span class="op">+</span> [<span class="st">"time"</span>, <span class="st">"default"</span>]], duration_col<span class="op">=</span><span class="st">"time"</span>, event_col<span class="op">=</span><span class="st">"default"</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> c_index(model, data):</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> concordance_index(data[<span class="st">"time"</span>], <span class="op">-</span>model.predict_partial_hazard(data[covs]), data[<span class="st">"default"</span>])</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>pd.DataFrame({</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"concordance on 2006"</span>: [c_index(m06, train), c_index(m17, train)],</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"concordance on 2017"</span>: [c_index(m06, test), c_index(m17, test)],</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>}, index<span class="op">=</span>[<span class="st">"model fitted on 2006"</span>, <span class="st">"model fitted on 2017"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="10">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">concordance on 2006</th>
+<th data-quarto-table-cell-role="th">concordance on 2017</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">model fitted on 2006</td>
+<td>0.738</td>
+<td>0.778</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">model fitted on 2017</td>
+<td>0.731</td>
+<td>0.790</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>The ranking transfers almost intact: a model fitted on 2006 sorts 2017 borrowers nearly as well as a model fitted on 2017 itself. Now the level. For each decile of predicted risk in 2017, compare the predicted probability of default within 24 months with what happened (at 24 months prepayment is still small, so the cause-specific and competing-risks probabilities nearly coincide):</p>
+<div id="531c65fb" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:37:36.151015Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:37:36.151015Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:37:36.365895Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:37:36.364885Z&quot;}" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>horizon <span class="op">=</span> <span class="dv">24</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>pred06 <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> m06.predict_survival_function(test[covs], times<span class="op">=</span>[horizon]).T[horizon]</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>pred17 <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> m17.predict_survival_function(test[covs], times<span class="op">=</span>[horizon]).T[horizon]</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>decile <span class="op">=</span> pd.qcut(pred17.rank(method<span class="op">=</span><span class="st">"first"</span>), <span class="dv">10</span>, labels<span class="op">=</span><span class="va">False</span>) <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>observed <span class="op">=</span> test.assign(decile<span class="op">=</span>decile.values, event<span class="op">=</span>np.where(test[<span class="st">"default"</span>] <span class="op">==</span> <span class="dv">1</span>, <span class="dv">1</span>, np.where(loans.loc[test.index, <span class="st">"event"</span>] <span class="op">==</span> <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">0</span>))) <span class="op">\</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>               .groupby(<span class="st">"decile"</span>).<span class="bu">apply</span>(<span class="kw">lambda</span> g: cumulative_incidence(g[<span class="st">"time"</span>], g[<span class="st">"event"</span>], horizon)[<span class="st">"cif_default"</span>].iloc[<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>calib <span class="op">=</span> pd.DataFrame({<span class="st">"observed"</span>: observed,</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"predicted, model fitted on 2017"</span>: pred17.groupby(decile.values).mean(),</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"predicted, model fitted on 2006"</span>: pred06.groupby(decile.values).mean()})</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>calib.index.name <span class="op">=</span> <span class="st">"risk decile (2017 loans)"</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>calib</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="11">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">observed</th>
+<th data-quarto-table-cell-role="th">predicted, model fitted on 2017</th>
+<th data-quarto-table-cell-role="th">predicted, model fitted on 2006</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">risk decile (2017 loans)</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>4.151e-04</td>
+<td>8.697e-04</td>
+<td>0.008</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2.076e-04</td>
+<td>1.683e-03</td>
+<td>0.013</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">3</td>
+<td>1.038e-03</td>
+<td>2.480e-03</td>
+<td>0.017</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">4</td>
+<td>1.662e-03</td>
+<td>3.405e-03</td>
+<td>0.020</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">5</td>
+<td>2.492e-03</td>
+<td>4.525e-03</td>
+<td>0.024</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">6</td>
+<td>3.530e-03</td>
+<td>5.967e-03</td>
+<td>0.028</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">7</td>
+<td>6.236e-03</td>
+<td>7.903e-03</td>
+<td>0.033</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">8</td>
+<td>1.226e-02</td>
+<td>1.080e-02</td>
+<td>0.040</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">9</td>
+<td>1.851e-02</td>
+<td>1.603e-02</td>
+<td>0.048</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">10</td>
+<td>3.476e-02</td>
+<td>3.300e-02</td>
+<td>0.071</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="a197606c" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:37:36.369492Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:37:36.367896Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:37:36.860775Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:37:36.859766Z&quot;}" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">7</span>, <span class="dv">4</span>))</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>ax.plot(calib.index, calib[<span class="st">"observed"</span>], <span class="st">"o-"</span>, color<span class="op">=</span><span class="st">"black"</span>, label<span class="op">=</span><span class="st">"observed"</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>ax.plot(calib.index, calib[<span class="st">"predicted, model fitted on 2017"</span>], <span class="st">"s--"</span>, color<span class="op">=</span>BLUE, label<span class="op">=</span><span class="st">"model fitted on 2017"</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>ax.plot(calib.index, calib[<span class="st">"predicted, model fitted on 2006"</span>], <span class="st">"^--"</span>, color<span class="op">=</span>RED, label<span class="op">=</span><span class="st">"model fitted on 2006 (out of time)"</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>ax.set_yscale(<span class="st">"log"</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"decile of predicted risk"</span>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="ss">f"probability of default within </span><span class="sc">{</span>horizon<span class="sc">}</span><span class="ss"> months"</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>ax.set_xticks(<span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">11</span>))</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>ax.legend(frameon<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Out-of-time validation: ranking holds, level does not"</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"../figures/out_of_time_calibration.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_cox_model_files/figure-html/cell-13-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>The model fitted on the crisis vintage ranks 2017 borrowers correctly but overstates their risk several times over.</strong> This is the central distinction of credit-model validation: <em>discrimination</em> (who is riskier) is a property of the borrowers and transfers across time; <em>calibration</em> (how risky) depends on the economic cycle and does not. In practice, banks keep the ranking model and recalibrate its level, separating a <em>through-the-cycle</em> probability of default from a <em>point-in-time</em> one.</p>
+<div id="8e4fc065" class="cell" data-execution="{&quot;iopub.execute_input&quot;:&quot;2026-11-06T00:37:36.864777Z&quot;,&quot;iopub.status.busy&quot;:&quot;2026-11-06T00:37:36.863775Z&quot;,&quot;iopub.status.idle&quot;:&quot;2026-11-06T00:37:36.877231Z&quot;,&quot;shell.execute_reply&quot;:&quot;2026-11-06T00:37:36.876117Z&quot;}" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>hr.to_csv(<span class="st">"../results/cox_hazard_ratios.csv"</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>windows.to_csv(<span class="st">"../results/vintage_hr_by_loan_age.csv"</span>, index<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>calib.to_csv(<span class="st">"../results/out_of_time_calibration.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
