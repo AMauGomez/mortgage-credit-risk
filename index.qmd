@@ -1,6 +1,6 @@
 ---
 title: "Why did 2006 mortgages default almost six times more than 2017 ones?"
-subtitle: "Credit-risk modelling on 100,000 US mortgages: competing-risks survival, an out-of-time validated Cox model, borrower segmentation and a Monte Carlo of portfolio losses checked against the Basel formula"
+subtitle: "Credit-risk modelling on 100,000 US mortgages: competing-risks survival, an out-of-time validated Cox model, a scorecard against XGBoost, LightGBM and a neural network, borrower segmentation and a Monte Carlo of portfolio losses checked against the Basel formula"
 author: "Aaron Mauricio Gómez Jiménez"
 format:
   html:
@@ -9,7 +9,7 @@ format:
     toc-depth: 2
 ---
 
-**November 2026** · Python (pandas, lifelines, scikit-learn, SciPy) and SQL (DuckDB) · [Code and notebooks](https://github.com/AMauGomez/mortgage-credit-risk) · Data: [Freddie Mac Single-Family Loan-Level Dataset](https://freddiemac.com/research/datasets/sf-loanlevel-dataset)
+**November 2026** · Python (pandas, lifelines, scikit-learn, XGBoost, LightGBM, SHAP, SciPy) and SQL (DuckDB) · [Code and notebooks](https://github.com/AMauGomez/mortgage-credit-risk) · Data: [Freddie Mac Single-Family Loan-Level Dataset](https://freddiemac.com/research/datasets/sf-loanlevel-dataset)
 
 ```{=html}
 <style>
@@ -57,6 +57,23 @@ Giving the 2006 book the safer 2017 mix of borrowers barely lowers its default r
 
 ![](figures/out_of_time_calibration.png)
 
+## Scorecard vs machine learning
+
+A bank-style scorecard (weights of evidence, logistic regression, points table) is compared with XGBoost, LightGBM (also with monotone constraints) and a neural network, all fitted on 2006 loans to predict default within three years:
+
+| Model | Gini, 2006 test | Gini, 2017 (out of time) | PSI |
+|---|---|---|---|
+| Scorecard (logistic + WoE) | 0.53 | 0.53 | 0.05 |
+| XGBoost | 0.55 | 0.53 | 0.06 |
+| LightGBM | 0.54 | 0.53 | 0.05 |
+| Neural network | 0.56 | 0.46 | 0.12 |
+
+- Machine learning ranks loans slightly better **in time** (at most about one AUC point) and **not at all out of time**; the neural network loses almost 4 AUC points on 2017 loans (bootstrap interval −0.047 to −0.025).
+- Every model overpredicts 2017 default about fourfold: no algorithm recovers information the origination data do not contain.
+- SHAP values show the boosting model learned the scorecard's story by itself (credit score, LTV steps at 80% and 90%, debt-to-income). With a few strong variables, the scorecard wins on auditability at equal accuracy.
+
+![](figures/pd_calibration_ml.png)
+
 ## Portfolio losses and capital
 
 A one-factor (Vasicek) model of correlated defaults, calibrated on the 2017 book with a crisis-level loss given default:
@@ -77,6 +94,7 @@ A one-factor (Vasicek) model of correlated defaults, calibrated on the 2017 book
 | 3 | [Cox model](notebooks/03_cox_model.html) | Hazard ratios, proportional-hazards test, residual diagnostics, effects by loan age, out-of-time validation |
 | 4 | [Segmentation](notebooks/04_segmentation.html) | PCA, k-means, composition vs environment |
 | 5 | [Portfolio loss simulation](notebooks/05_portfolio_loss_simulation.html) | Vasicek Monte Carlo, Basel check, importance sampling, crisis tail probability, correlation by maximum likelihood and by MCMC |
+| 6 | [Scorecard vs machine learning](notebooks/06_pd_models_ml.html) | WoE/IV scorecard and points, XGBoost, LightGBM (monotone), neural network, AUC/Gini/KS, bootstrap, calibration, PSI, SHAP |
 
 ## Data
 

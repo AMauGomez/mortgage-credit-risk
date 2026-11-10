@@ -50,6 +50,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#the-answer-mostly-the-economy" id="toc-the-answer-mostly-the-economy" class="nav-link" data-scroll-target="#the-answer-mostly-the-economy">The answer: mostly the economy</a></li>
   <li><a href="#two-traps-that-would-have-produced-the-wrong-answer" id="toc-two-traps-that-would-have-produced-the-wrong-answer" class="nav-link" data-scroll-target="#two-traps-that-would-have-produced-the-wrong-answer">Two traps that would have produced the wrong answer</a></li>
   <li><a href="#validating-the-model" id="toc-validating-the-model" class="nav-link" data-scroll-target="#validating-the-model">Validating the model</a></li>
+  <li><a href="#scorecard-vs-machine-learning" id="toc-scorecard-vs-machine-learning" class="nav-link" data-scroll-target="#scorecard-vs-machine-learning">Scorecard vs machine learning</a></li>
   <li><a href="#portfolio-losses-and-capital" id="toc-portfolio-losses-and-capital" class="nav-link" data-scroll-target="#portfolio-losses-and-capital">Portfolio losses and capital</a></li>
   <li><a href="#the-notebooks" id="toc-the-notebooks" class="nav-link" data-scroll-target="#the-notebooks">The notebooks</a></li>
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
@@ -61,7 +62,7 @@ ul.task-list li input[type="checkbox"] {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Why did 2006 mortgages default almost six times more than 2017 ones?</h1>
-<p class="subtitle lead">Credit-risk modelling on 100,000 US mortgages: competing-risks survival, an out-of-time validated Cox model, borrower segmentation and a Monte Carlo of portfolio losses checked against the Basel formula</p>
+<p class="subtitle lead">Credit-risk modelling on 100,000 US mortgages: competing-risks survival, an out-of-time validated Cox model, a scorecard against XGBoost, LightGBM and a neural network, borrower segmentation and a Monte Carlo of portfolio losses checked against the Basel formula</p>
 </div>
 
 
@@ -84,7 +85,7 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p><strong>November 2026</strong> · Python (pandas, lifelines, scikit-learn, SciPy) and SQL (DuckDB) · <a href="https://github.com/AMauGomez/mortgage-credit-risk">Code and notebooks</a> · Data: <a href="https://freddiemac.com/research/datasets/sf-loanlevel-dataset">Freddie Mac Single-Family Loan-Level Dataset</a></p>
+<p><strong>November 2026</strong> · Python (pandas, lifelines, scikit-learn, XGBoost, LightGBM, SHAP, SciPy) and SQL (DuckDB) · <a href="https://github.com/AMauGomez/mortgage-credit-risk">Code and notebooks</a> · Data: <a href="https://freddiemac.com/research/datasets/sf-loanlevel-dataset">Freddie Mac Single-Family Loan-Level Dataset</a></p>
 <style>
 .flow{display:flex;flex-wrap:wrap;gap:.6rem;margin:1.2rem 0 .4rem;align-items:stretch}
 .flow .step{flex:1 1 160px;border:1px solid #dadce0;border-radius:10px;padding:.75rem .8rem;background:#fafbfc}
@@ -123,6 +124,52 @@ ul.task-list li input[type="checkbox"] {
 <li><strong>Residual diagnostics:</strong> scaled Schoenfeld residuals show that origination information ages (the credit-score effect loses about two thirds of its size over the life of a loan); martingale residuals show the credit score acts non-linearly; Cox-Snell residuals show the model overstates the accumulated risk of its riskiest loans, consistent with a vintage effect that changes over time.</li>
 </ul>
 <p><img src="figures/out_of_time_calibration.png" class="img-fluid"></p>
+</section>
+<section id="scorecard-vs-machine-learning" class="level2">
+<h2 class="anchored" data-anchor-id="scorecard-vs-machine-learning">Scorecard vs machine learning</h2>
+<p>A bank-style scorecard (weights of evidence, logistic regression, points table) is compared with XGBoost, LightGBM (also with monotone constraints) and a neural network, all fitted on 2006 loans to predict default within three years:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Gini, 2006 test</th>
+<th>Gini, 2017 (out of time)</th>
+<th>PSI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Scorecard (logistic + WoE)</td>
+<td>0.53</td>
+<td>0.53</td>
+<td>0.05</td>
+</tr>
+<tr class="even">
+<td>XGBoost</td>
+<td>0.55</td>
+<td>0.53</td>
+<td>0.06</td>
+</tr>
+<tr class="odd">
+<td>LightGBM</td>
+<td>0.54</td>
+<td>0.53</td>
+<td>0.05</td>
+</tr>
+<tr class="even">
+<td>Neural network</td>
+<td>0.56</td>
+<td>0.46</td>
+<td>0.12</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Machine learning ranks loans slightly better <strong>in time</strong> (at most about one AUC point) and <strong>not at all out of time</strong>; the neural network loses almost 4 AUC points on 2017 loans (bootstrap interval −0.047 to −0.025).</li>
+<li>Every model overpredicts 2017 default about fourfold: no algorithm recovers information the origination data do not contain.</li>
+<li>SHAP values show the boosting model learned the scorecard’s story by itself (credit score, LTV steps at 80% and 90%, debt-to-income). With a few strong variables, the scorecard wins on auditability at equal accuracy.</li>
+</ul>
+<p><img src="figures/pd_calibration_ml.png" class="img-fluid"></p>
 </section>
 <section id="portfolio-losses-and-capital" class="level2">
 <h2 class="anchored" data-anchor-id="portfolio-losses-and-capital">Portfolio losses and capital</h2>
@@ -170,6 +217,11 @@ ul.task-list li input[type="checkbox"] {
 <td>5</td>
 <td><a href="notebooks/05_portfolio_loss_simulation.html">Portfolio loss simulation</a></td>
 <td>Vasicek Monte Carlo, Basel check, importance sampling, crisis tail probability, correlation by maximum likelihood and by MCMC</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td><a href="notebooks/06_pd_models_ml.html">Scorecard vs machine learning</a></td>
+<td>WoE/IV scorecard and points, XGBoost, LightGBM (monotone), neural network, AUC/Gini/KS, bootstrap, calibration, PSI, SHAP</td>
 </tr>
 </tbody>
 </table>

@@ -6,3 +6,6 @@ lifelines==0.30.3
 scikit-learn==1.9.1
 matplotlib==3.11.2
 pyarrow==26.0.1
+xgboost==3.2.0
+lightgbm==4.7.0
+shap==0.51.0

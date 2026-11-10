@@ -1,8 +1,8 @@
 # Why did 2006 mortgages default almost six times more than 2017 ones?
 
-**Credit-risk modelling on 100,000 US mortgages followed for up to 20 years: competing-risks survival, a Cox model validated out of time, borrower segmentation, and a Monte Carlo of portfolio losses checked against the Basel capital formula.**
+**Credit-risk modelling on 100,000 US mortgages followed for up to 20 years: competing-risks survival, a Cox model validated out of time, a scorecard against XGBoost, LightGBM and a neural network, borrower segmentation, and a Monte Carlo of portfolio losses checked against the Basel capital formula.**
 
-📊 [Full report](https://amaugomez.github.io/mortgage-credit-risk/) · Python (pandas, lifelines, scikit-learn, SciPy) · SQL (DuckDB) · Data: [Freddie Mac Single-Family Loan-Level Dataset](https://freddiemac.com/research/datasets/sf-loanlevel-dataset)
+📊 [Full report](https://amaugomez.github.io/mortgage-credit-risk/) · Python (pandas, lifelines, scikit-learn, XGBoost, LightGBM, SHAP, SciPy) · SQL (DuckDB) · Data: [Freddie Mac Single-Family Loan-Level Dataset](https://freddiemac.com/research/datasets/sf-loanlevel-dataset)
 
 ---
 
@@ -38,6 +38,19 @@ A Cox model fitted on the 2006 vintage ranks 2017 borrowers almost as well as a 
 
 The proportional-hazards checks are findings, not nuisances: the extra risk of a 2006 loan peaked in months 25–48 of its life (2008–2010), and the predictive power of origination information fades as loans age. Residual diagnostics (scaled Schoenfeld, martingale, Cox-Snell, deviance) show where the model falls short: the credit score acts non-linearly, and a constant vintage effect overstates the accumulated risk of long-lived 2006 loans.
 
+## Scorecard vs machine learning
+
+A bank-style scorecard (weights of evidence, information value, logistic regression, points table) against XGBoost, LightGBM (also with monotone constraints) and a neural network, all fitted on 2006 loans to predict default within three years:
+
+| Model | Gini, 2006 test | Gini, 2017 (out of time) | PSI |
+|---|---|---|---|
+| Scorecard (logistic + WoE) | 0.53 | 0.53 | 0.05 |
+| XGBoost | 0.55 | 0.53 | 0.06 |
+| LightGBM | 0.54 | 0.53 | 0.05 |
+| Neural network | 0.56 | 0.46 | 0.12 |
+
+Machine learning ranks loans slightly better in time (at most about one AUC point) and not at all out of time; the neural network loses almost 4 AUC points on 2017 loans. Every model overpredicts 2017 default about fourfold. SHAP values show the boosting model learned the scorecard's story by itself. With a few strong variables, the scorecard wins on auditability at equal accuracy.
+
 ## Portfolio losses and capital
 
 A one-factor (Vasicek) model of correlated defaults, calibrated on the 2017 book with a crisis-level loss given default:
@@ -58,6 +71,7 @@ A one-factor (Vasicek) model of correlated defaults, calibrated on the 2017 book
 | 3 | [Cox model](notebooks/03_cox_model.ipynb) | Hazard ratios, proportional-hazards test, residual diagnostics, effects by loan age, out-of-time validation |
 | 4 | [Segmentation](notebooks/04_segmentation.ipynb) | PCA, k-means, composition vs environment decomposition |
 | 5 | [Portfolio loss simulation](notebooks/05_portfolio_loss_simulation.ipynb) | Vasicek Monte Carlo, Basel check, importance sampling, crisis tail probability, correlation by maximum likelihood and by MCMC |
+| 6 | [Scorecard vs machine learning](notebooks/06_pd_models_ml.ipynb) | WoE/IV scorecard and points, XGBoost, LightGBM (monotone), neural network, AUC/Gini/KS, bootstrap, calibration, PSI, SHAP |
 
 Code: [`src/credit_risk/data.py`](src/credit_risk/data.py) builds one row per loan with SQL run by DuckDB directly on the raw files; [`src/credit_risk/survival.py`](src/credit_risk/survival.py) implements the discrete-time competing-risks estimator (checked against `lifelines`).
 
